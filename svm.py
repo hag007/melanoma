@@ -54,6 +54,12 @@ def load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype
     return data, labels, primary_labeled, metastatic_labeled, primary_labeled[0]
 
 def randonize_patients(data, labels):
+    total  = zip(data, labels)
+    random.shuffle(total)
+    # results = zip(*total)
+    return zip(*total)
+
+def randonize_patients_old(data, labels):
     total = np.c_[data, labels]
     random.shuffle(total)
     # results = zip(*total)
@@ -71,27 +77,27 @@ def divide_train_and_test_groups(data, labels):
 def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test):
     gs_train = GridSearchCV(svm.SVC(probability=True), param_grid=tuned_parameters, return_train_score=True)
     data_train = [[cur2 for cur2 in cur1] for cur1 in data_train]
-    labels_train = [i for i in labels_train]
+    labels_train = [cur for i, cur in enumerate(labels_train)]
     data_test = [[cur2 for cur2 in cur1] for cur1 in data_test]
-    labels_test = [i for i in labels_test]
+    labels_test = [cur for i, cur in enumerate(labels_test)]
     gs_train.fit(data_train, labels_train)
-    # predicted_results = gs_train.predict(data_test)
-    probabilities = gs_train.decision_function(data_test)
-    # probabilities = gs_train.predict_proba(data_test)
-    # probabilities = probabilities[:,1]
+    predicted_results = gs_train.predict(data_test)
+    # probabilities = gs_train.decision_function(data_test)
+    probabilities = gs_train.predict_proba(data_test)
+    probabilities = probabilities[:,1]
     #zipped = zip(probabilities, data_train, labels_train)
     #zipped_sorted = sorted(zipped, key=lambda x: x[0])
     #patients_rank_sorted = [x[0] for x in zipped_sorted]
     #patients_expression_sorted = [x[1] for x in zipped_sorted]
     #patients_labels_sorted = [x[2] for x in zipped_sorted]
-    # precision, recall, _ = precision_recall_curve(labels_test, probabilities)
+    precision, recall, _ = precision_recall_curve(labels_test, probabilities)
     average_precision = average_precision_score(labels_test, probabilities)
     print "average_precision: {}".format(average_precision)
-    ###
-    #
+    ##
+
     # plt.step(recall, precision, color='b', alpha=0.2,
     #          where='post')
-    # plt.fill_between(recall, precision, step='post', alpha=0.2,
+    # plt.fill_between(recall, precision, step='post', alpha=0.01,
     #                  color='b')
     #
     # plt.xlabel('Recall')
@@ -99,6 +105,7 @@ def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test
     # plt.ylim([0.0, 1.05])
     # plt.xlim([0.0, 1.0])
     # plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(average_precision))
+    # plt.show()
     # plt.savefig(os.path.join(BASE_OUTPUT_DIR,"test.png"))
 
     ###
@@ -178,9 +185,9 @@ def predict_tumor_type_by_tested_gene_expression(tested_gene_file_names, express
         train_scores.append([])
         test_scores.append([])
     for i in range(rounds):
-        genelist_datasets = np.rot90(genelist_datasets, k=-1, axes=(1, 0))
-        genelist_datasets, labels = randonize_patients(genelist_datasets, labels)
         genelist_datasets = np.rot90(genelist_datasets, k=1, axes=(1, 0))
+        genelist_datasets, labels = randonize_patients(genelist_datasets, labels)
+        genelist_datasets = np.rot90(genelist_datasets, k=-1, axes=(1, 0))
         for j, cur_dataset in enumerate(genelist_datasets):
             data_train, data_test, labels_train, labels_test = divide_train_and_test_groups(cur_dataset, labels)
             tuned_parameters = {'C': [10], 'kernel': ['rbf']}
