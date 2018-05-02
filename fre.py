@@ -76,7 +76,7 @@ def print_fre_results(test_scores, rounds):
     return avgs, vars
 
 # (4) main
-def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=2, recursion_number_of_steps=20, pval_preprocessing_file_name = None):
+def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=2, recursion_number_of_steps=20, pval_preprocessing_file_name = None, is_randomized=True):
 
     print "about ot analyse: {}".format(tested_gene_list_file_name)
     # fetch gene expression by gene_id, divided by tumor type
@@ -106,6 +106,8 @@ def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file
         print "pval saved to file"
 
     gene_ids_ranked = [cur[0] for cur in gene_pval_pair]
+    if is_randomized:
+        gene_ids_ranked =  list(reversed(gene_ids_ranked))  # random.shuffle(gene_ids_ranked)
 
     train_scores = []
     test_scores = []

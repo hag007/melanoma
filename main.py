@@ -61,7 +61,7 @@ from fre import *
 # predict_tumor_type_by_tested_gene_expression(["test.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=10)
 
 # (4)
-RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=5, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt")
+RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=5, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", is_randomized=True)
 
 
 # primaries_avg = []
