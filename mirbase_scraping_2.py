@@ -6,7 +6,34 @@ import numpy as np
 import matplotlib as mpl
 import requests
 from bs4 import BeautifulSoup
-from infra import *
+import logging
+logging.basicConfig(filename='hgtlog.log',level=logging.INFO)
+logger = logging.getLogger("log")
+
+def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
+    if gene_list_path == None:
+        gene_list_path = gene_list_file_name
+    f = open(gene_list_path,'r')
+    lines = [l.strip() for l in f]
+    f.close()
+    return lines
+
+def send_request(link):
+    counter = 0
+    req_success = False
+    while not req_success:
+        try:
+            page = requests.get(link)
+            soup = BeautifulSoup(page.content, 'html.parser')
+            req_success = True
+        except Exception:
+            counter+=1
+            print "Failed to establish a new connection to {}. retry {} time.".format(link, counter)
+            logger.info("Failed to establish a new connection to {}. retry {} time.".format(link, counter))
+            pass
+    return soup
+
+
 lines_dict = load_gene_dictionary("ensembl2gene_symbol.txt")
 
 
@@ -22,20 +49,16 @@ for cur in lines_dict:
 
 mirclusters = {}
 
-mir_ids = load_gene_list("mir_total.txt")
+mir_ids = load_gene_dictionary("mir_total.txt")
 for mir_id in mir_ids:
 
-    mirbase = requests.get('http://www.mirbase.org/cgi-bin/query.pl?terms={}'.format(mir_id))
-    contents = mirbase.content
-
-    mirbase_soup = BeautifulSoup(contents, 'html.parser')
+    mirbase_soup = send_request('http://www.mirbase.org/cgi-bin/query.pl?terms={}'.format(mir_id))
     mirbase_aa = mirbase_soup.find_all('a')
 
     for a in mirbase_aa:
         link = a.get('href')
         if "www.targetscan.org" in link:
-            taget_scan_page = requests.get(link)
-            taget_scan_soup = BeautifulSoup(taget_scan_page.content, 'html.parser')
+            taget_scan_soup = send_request(link)
             target_scan_aa = taget_scan_soup.find_all('a')
             for a in target_scan_aa:
                 if "http://www.ensembl.org/Homo_sapiens/Gene/Summary" in a.get("href"):
@@ -44,17 +67,19 @@ for mir_id in mir_ids:
                         mirclusters[txt].add(mir_id)
                     else:
                         mirclusters[txt] = set([mir_id])
-                    print txt
+                    # print txt
+    print "done analyzing {}".format(mir_id)
+    logger.info("done analyzing {}".format(mir_id))
 
 
-
-f = open(os.path.join(BASE_OUTPUT_DIR, "mir_cluster_out.txt"),'w')
+f = open("mir_cluster_out.txt",'w')
 for key, values in mirclusters.iteritems():
-    line = key+"\t"
-    for value in values:
-        line+=(value+"\t")
-    line = line[:-1] + "\n"
-    f.write(line)
+    if gene_symbols2ensembl.has_key(key):
+        line = gene_symbols2ensembl[key]+"\t"
+        for value in values:
+            line+=(value+"\t")
+        line = line[:-1] + "\n"
+        f.write(line)
 
 f.close()
 

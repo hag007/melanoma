@@ -124,22 +124,14 @@ def plot_genes_proportion(expected_actual_difference_list, expected_actual_ratio
 # mHGT DP
 def calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b):
     if n==0 and b==0:
-        non_extremer_paths_DP_table[b][n] = 1
+        # non_extremer_paths_DP_table[b][n] = 1
+        return 1
     elif b==-1 or b>n or (HGTs[b][n] < mHGT and (b<len(HGTs)-1 or n<len(HGTs[0])-1)):
-        non_extremer_paths_DP_table[b][n] = 0
+        # non_extremer_paths_DP_table[b][n] = 0
+        return 0
     elif non_extremer_paths_DP_table[b][n] == -1:
         non_extremer_paths_DP_table[b][n] = long(calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n-1, b)) + long(calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n-1, b-1))
 
-    return non_extremer_paths_DP_table[b][n]
-
-# mHGT DP
-def calc_num_of_non_extremer_paths_by_line(non_extremer_paths_DP_table, slope, constant, n, b):
-    if n==0 and b==0:
-        non_extremer_paths_DP_table[b][n] = 1
-    elif b==-1 or b>n or Decimal(slope*n+constant).quantize(Decimal('.00001'), rounding=ROUND_HALF_EVEN) <= b : # and (b<len(non_extremer_paths_DP_table)-1 or n<len(non_extremer_paths_DP_table[0])-1))
-        non_extremer_paths_DP_table[b][n] = 0
-    elif non_extremer_paths_DP_table[b][n] == -1:
-        non_extremer_paths_DP_table[b][n] = long(calc_num_of_non_extremer_paths_by_line(non_extremer_paths_DP_table, slope, constant, n-1, b)) + long(calc_num_of_non_extremer_paths_by_line(non_extremer_paths_DP_table, slope, constant, n-1, b-1))
 
     return non_extremer_paths_DP_table[b][n]
 
@@ -187,20 +179,17 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     if not B:
         B = sum(lambda_group_inclusion_binary_vector)
     HGTs = None
-    non_extremer_paths_DP_table_by_line =[]
     non_extremer_paths_DP_table =[]
     for b in range(0,B+1):
         non_extremer_paths_DP_table.append([])
-        non_extremer_paths_DP_table_by_line.append([])
         for n in range(0, N + 1):
             non_extremer_paths_DP_table[-1].append(-1)
-            non_extremer_paths_DP_table_by_line[-1].append(-1)
     # non_extremer_paths_DP_table = np.full((B+1, N+1), long(-1))
     if os.path.isfile(os.path.join(BASE_OUTPUT_DIR,hgt_preprocessing_file_name)) and IS_FORCE == False:
         HGTs =  np.load(os.path.join(BASE_OUTPUT_DIR, hgt_preprocessing_file_name))
         print "hgt loaded from file"
-        left_tails = [(hypergeom.sf(i, N, B, i) + hypergeom.pmf(i, N, B, i)) for i in range(0,B+1)]
-        top_tails = [(hypergeom.sf(B, N, B, i) + hypergeom.pmf(B, N, B, i)) for i in range(0,N+1)]
+        # left_tails = [(hypergeom.sf(i, N, B, i) + hypergeom.pmf(i, N, B, i)) for i in range(0,B+1)]
+        # top_tails = [(hypergeom.sf(B, N, B, i) + hypergeom.pmf(B, N, B, i)) for i in range(0,N+1)]
     else:
         for n in range(N+1):
             # print "n1: {}".format(n)
@@ -226,40 +215,30 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
             b=b+1
        if n > N: break
 
-    for i, cur in enumerate(left_tails):
-        if cur <= mHGT:
-            left_edge = (i,i)
-            break
-
-    for i, cur in enumerate(top_tails):
-        if cur >= mHGT:
-            top_edge = (i-1,B)
-            break
-    slope = (left_edge[1] - top_edge[1]) / ((left_edge[0] - top_edge[0])*1.0)
-    constant = top_edge[1] - slope*top_edge[0]
+    # for i, cur in enumerate(left_tails):
+    #     if cur <= mHGT:
+    #         left_edge = (i,i)
+    #         break
+    #
+    # for i, cur in enumerate(top_tails):
+    #     if cur >= mHGT:
+    #         top_edge = (i-1,B)
+    #         break
+    # slope = (left_edge[1] - top_edge[1]) / ((left_edge[0] - top_edge[0])*1.0)
+    # constant = top_edge[1] - slope*top_edge[0]
     print "mHGT calculations done with {} genes included from gene family".format(b)
     for n in range(0, N+1):
-        # print "n2: {}".format(n)
-        for b in range(0, B+1):
-            print "n: {}, b: {}".format(n, b)
-
-            x = calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b)
-            y = calc_num_of_non_extremer_paths_by_line(non_extremer_paths_DP_table_by_line, slope, constant, n, b)
-            cond = x != y
-            if cond:
-                print "inconsistency in {} {}: {} {}".format(b,n, non_extremer_paths_DP_table[b][n], non_extremer_paths_DP_table_by_line[b][n])
-            # print "non_extremer_paths_DP_table: {}".format(non_extremer_paths_DP_table[b][n])
-        if n !=0:
-            for b in range(0, B + 1):
-                non_extremer_paths_DP_table[b][n-1] = 0
-                non_extremer_paths_DP_table_by_line[b][n-1] = 0
+        for b1 in range(0, B+1):
+            print "n: {}, b: {}".format(n, b1)
+            calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b1)
+         # if n !=0:
+        #     for b in range(0, B + 1):
+        #         non_extremer_paths_DP_table[b][n-1] = 0
 
     non_extremer_paths_counter = non_extremer_paths_DP_table[B][N]# calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, N, B)
-    non_extremer_paths_counter_by_line = non_extremer_paths_DP_table_by_line[B][N]  # calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, N, B)
 
     total_possible_paths = nCk(N,B)
     print "number of valid non extremer paths: {}, total: {}, ratio: {}".format(non_extremer_paths_counter, total_possible_paths, Decimal(non_extremer_paths_counter)/Decimal(total_possible_paths))
-    print "number of valid non extremer paths by line: {}, total: {}, ratio: {}".format(non_extremer_paths_counter_by_line, total_possible_paths, Decimal(non_extremer_paths_counter_by_line)/Decimal(total_possible_paths))
     pval = 1- Decimal(non_extremer_paths_counter)/Decimal(total_possible_paths)
     print "mHGT pval: {}".format(pval)
 

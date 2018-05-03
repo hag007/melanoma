@@ -41,7 +41,7 @@ from fre import *
 # (1) similarity caller:
 # find_expression_similarity_profile(gene_list_file_name="oxidative.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotpe_file_name="TCGA-SKCM.GDC_phenotype.tsv")
 # (2) call:
-# find_expression_significance("mito.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_13.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 13)
+# find_expression_significance("mito.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_19976_13.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=19976, B = 13)
 # find_expression_significance("lysosome_genes.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_19976_754.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=19976, B = 754)
 # find_expression_significance("apoptosis_genes.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_19976_119.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=19976, B = 119)
 # find_expression_significance("lipid_synthase_genes.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_19976_129.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=19976, B = 129)
@@ -56,12 +56,16 @@ from fre import *
 # find_expression_significance("oxidation_genes.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_421.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 421)
 # find_expression_significance("top420s.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_421.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 420)
 # find_expression_significance("oxidative.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_194.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 194)
+#------ mirna ------------:
+find_expression_significance("mir_test.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_42.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 42)
+# find_expression_significance("sanity_2.txt", "sanity_3.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_3_2.npy", pval_preprocessing_file_name = "pvals_mirna_sanity.txt", N=3, B = 2)
+
 # (3) call
 # predict_tumor_type_by_tested_gene_expression(["oxidative.txt", "oxidation_genes.txt", "mito.txt", "apoptosis_genes.txt", "lysosome_genes.txt", "lipid_synthase_genes.txt", "top420s.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=100)
 # predict_tumor_type_by_tested_gene_expression(["test.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=10)
 
 # (4)
-RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=5, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", is_randomized=True)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=5, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", is_randomized=True)
 
 
 # primaries_avg = []
