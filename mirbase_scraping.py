@@ -68,7 +68,7 @@ for mir_id in mir_ids:
     print "done analyzing {}".format(mir_id)
 
 
-f = open(os.path.join(BASE_OUTPUT_DIR, "mir_cluster_out.txt"),'w')
+f = open(os.path.join(CACHE_DIR, "mir_cluster_out.txt"), 'w')
 for key, values in mirclusters.iteritems():
     if gene_symbols2ensembl.has_key(key):
         line = gene_symbols2ensembl[key]+"\t"

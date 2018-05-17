@@ -1,33 +1,10 @@
-import re
-import os
-import math
-from numpy import *
-from decimal import Decimal, ROUND_HALF_EVEN
-from operator import mul    # or mul=lambda x,y:x*y
-from fractions import Fraction
-import numpy.random
-from sklearn.datasets import fetch_mldata
-import sklearn.preprocessing
-import numpy as np
-import matplotlib as mpl
-#mpl.use('Agg')
 import scipy.special
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use("ggplot")
-from sklearn import svm
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV, cross_val_score
-from sklearn.model_selection import PredefinedSplit
-from sklearn.metrics import accuracy_score
 import scipy
 from scipy.stats import hypergeom
 from statsmodels.sandbox.stats.multicomp import fdrcorrection0
-import time
-from matplotlib.ticker import FormatStrFormatter
-import math
 import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
@@ -51,7 +28,7 @@ def plot_pvalues(y_axis, x_axis, th,output_file_name, is_bigger_better=False):
         else:
             color = 'red'
         plt.setp(p, 'facecolor', color)
-    plt.savefig(os.path.join(BASE_OUTPUT_DIR, output_file_name))
+    plt.savefig(os.path.join(OUTPUT_DIR, output_file_name))
     plt.cla()
 
 
@@ -112,14 +89,14 @@ def plot_genes_proportion(expected_actual_difference_list, expected_actual_ratio
     plt.plot([0, total_significant_hypotheses_size], [0, expected_tested_genes_ratio],
              color="black")
     plt.legend()
-    plt.savefig(os.path.join(BASE_OUTPUT_DIR, "{}_sum_n".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
+    plt.savefig(os.path.join(OUTPUT_DIR, "{}_sum_n".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
     plt.cla()
     plt.plot(rank_in_total_list_list[1:], expected_actual_ratio_difference_list[1:], label="actual/expected proportion ratio")
     plt.plot(rank_in_total_list_list[1:], z_test_proportion_test_list[1:], label="z_score")
     plt.plot(rank_in_total_list_list[1:], [z_score_threshold_two_way for i in range(1,tested_genes_size)], label="z_score threshold (two-way)")
     plt.plot([total_significant_hypotheses_size, total_significant_hypotheses_size], [-0.5, 3.5], label="True hypotheses threshold")
     plt.legend()
-    plt.savefig(os.path.join(BASE_OUTPUT_DIR,"{}_sum_p".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
+    plt.savefig(os.path.join(OUTPUT_DIR, "{}_sum_p".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
 
 # mHGT DP
 def calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b):
@@ -144,8 +121,8 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     metastatic_expression = np.rot90(np.flip(metastatic_expression, 1), k=-1, axes=(1, 0))
 
     # test pval for significance differentiation between label values (primar vs metastatic)
-    if os.path.isfile(os.path.join(BASE_OUTPUT_DIR,pval_preprocessing_file_name)) and IS_FORCE == False:
-        gene_pval_pair = load_sets(os.path.join(BASE_OUTPUT_DIR, pval_preprocessing_file_name))
+    if os.path.isfile(os.path.join(CACHE_DIR, pval_preprocessing_file_name)) and USE_CACHE:
+        gene_pval_pair = load_sets(os.path.join(CACHE_DIR, pval_preprocessing_file_name))
         print "pval loaded from file"
     else:
         pvals = []
@@ -159,7 +136,7 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
         # sort gene_id-pval pairs by pval
         gene_pval_pair = zip(gene_symbols,pvals)
         gene_pval_pair.sort(key=lambda x: x[1], reverse=False)
-        save_sets(gene_pval_pair, os.path.join(BASE_OUTPUT_DIR, os.path.join(BASE_OUTPUT_DIR,pval_preprocessing_file_name)))
+        save_sets(gene_pval_pair, os.path.join(CACHE_DIR, os.path.join(CACHE_DIR, pval_preprocessing_file_name)))
         print "pval saved to file"
     # plot pvals
     pvals = [cur[1] for cur in gene_pval_pair]
@@ -185,8 +162,10 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
         for n in range(0, N + 1):
             non_extremer_paths_DP_table[-1].append(-1)
     # non_extremer_paths_DP_table = np.full((B+1, N+1), long(-1))
-    if os.path.isfile(os.path.join(BASE_OUTPUT_DIR,hgt_preprocessing_file_name)) and IS_FORCE == False:
-        HGTs =  np.load(os.path.join(BASE_OUTPUT_DIR, hgt_preprocessing_file_name))
+    if not hgt_preprocessing_file_name:
+        hgt_preprocessing_file_name = "HGTs_out_{}_{}.npy".format(N,B)
+    if os.path.isfile(os.path.join(CACHE_DIR, hgt_preprocessing_file_name)) and USE_CACHE:
+        HGTs =  np.load(os.path.join(CACHE_DIR, hgt_preprocessing_file_name))
         print "hgt loaded from file"
         # left_tails = [(hypergeom.sf(i, N, B, i) + hypergeom.pmf(i, N, B, i)) for i in range(0,B+1)]
         # top_tails = [(hypergeom.sf(B, N, B, i) + hypergeom.pmf(B, N, B, i)) for i in range(0,N+1)]
@@ -199,7 +178,7 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
             else:
                HGTs = b_tails
         HGTs[0][0] = 1
-        np.save(os.path.join(BASE_OUTPUT_DIR, hgt_preprocessing_file_name), HGTs)
+        np.save(os.path.join(CACHE_DIR, hgt_preprocessing_file_name), HGTs)
         print "hgt saved to file"
 
     print "HGTs calculations done"
@@ -229,7 +208,7 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     print "mHGT calculations done with {} genes included from gene family".format(b)
     for n in range(0, N+1):
         for b1 in range(0, B+1):
-            print "n: {}, b: {}".format(n, b1)
+            # print "n: {}, b: {}".format(n, b1)
             calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b1)
          # if n !=0:
         #     for b in range(0, B + 1):
@@ -249,6 +228,8 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     true_counter = len([cur for cur in fdr_results[0] if cur == True])
     print "true hypothesis: {}".format(true_counter)
     print "total hypothesis: {}".format(np.size(fdr_results[0]))
+
+    return pval
 
     # # plot qvals
     # qvals = fdr_results[1]

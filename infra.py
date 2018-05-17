@@ -1,7 +1,8 @@
+import time
 import re
 import os
 import math
-from numpy import *
+import random
 from decimal import Decimal, ROUND_HALF_EVEN
 from operator import mul    # or mul=lambda x,y:x*y
 from fractions import Fraction
@@ -12,22 +13,10 @@ import numpy as np
 import matplotlib as mpl
 #mpl.use('Agg')
 import scipy.special
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
 import matplotlib.pyplot as plt
+from utils.stopwatch import Stopwatch
 from matplotlib import style
 style.use("ggplot")
-from sklearn import svm
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV, cross_val_score
-from sklearn.model_selection import PredefinedSplit
-from sklearn.metrics import accuracy_score
-import scipy
-from scipy.stats import hypergeom
-from statsmodels.sandbox.stats.multicomp import fdrcorrection0
-import time
-from matplotlib.ticker import FormatStrFormatter
-import math
 import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
@@ -35,9 +24,9 @@ logger.addHandler(sh)
 from constants import *
 ############################################ infra ########################################
 
-def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
+def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,"list",gene_list_file_name)
+        gene_list_path = os.path.join(LIST_DIR,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -45,20 +34,34 @@ def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",d
 
 # return gene expression table filtered according an external list with proper orientation (0 degree angle according genes, 90 degree angle according patients)
 def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, source="GDC-TCGA",dataset="melanoma",by_gene=False):
-    gene_list = load_gene_list(gene_list_file_name=gene_list_file_name, gene_list_path=gene_list_path, source=source,dataset=dataset)
+    stopwatch = Stopwatch()
+    stopwatch.start()
+    gene_list = load_gene_list(gene_list_file_name=gene_list_file_name, gene_list_path=gene_list_path)
+    gene_list = [l.split(".")[0] for i, l in enumerate(gene_list)]
+    print stopwatch.stop("done loading gene list")
+    # random.shuffle(gene_list)
+    # gene_list = gene_list[:400]
     if gene_filter_file_name:
+        stopwatch.start()
         filter_gene_list = load_gene_list(gene_list_file_name=gene_filter_file_name, gene_list_path=gene_filter_path,
                                           source=source, dataset=dataset)
-        gene_list = [cur for cur in gene_list if cur in filter_gene_list or cur[:cur.find('.')] in filter_gene_list]
+        gene_list = [cur for cur in gene_list if cur in filter_gene_list]
+        print stopwatch.stop("done filter gene list")
 
     if gene_expression_path == None:
-        gene_expression_path = os.path.join(BASE_PROFILE, source, dataset, gene_expression_file_name)
-        f = open(gene_expression_path,'r')
-    expression_profiles_filtered = [l.strip().split() for i, l in enumerate(f) if i==0 or any([l.strip()[0:l.strip().find('\t')] in gene_list or l.strip()[0:l.strip().find('\t')].split(".")[0] in gene_list])]
+        gene_expression_path = os.path.join(TCGA_DATA_DIR, gene_expression_file_name)
+        stopwatch.start()
+    f = open(gene_expression_path,'r')
+    expression_profiles_filtered = [l.strip().split() for i, l in enumerate(f) if i==0 or l[:l.strip().find('\t')].split(".")[0] in gene_list]
+    # or l.strip()[0:l.strip().find('\t')] in gene_list or l.strip()[0:l.strip().find('\t')].split(".")[0] in gene_list
     f.close()
+    print stopwatch.stop("done filter gene expression")
     if not by_gene:
+        stopwatch.start()
         expression_profiles_filtered = np.flip(np.rot90(expression_profiles_filtered, k=1, axes=(1,0)),1)
+        print stopwatch.stop("done rotate gene expression")
 
+    expression_profiles_filtered
     return expression_profiles_filtered
 
 
@@ -71,7 +74,7 @@ def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expressio
 
 def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):
     if not phenotype_list_path:
-        phenotype_list_path = os.path.join(BASE_PROFILE,source,dataset,phenotype_file_name)
+        phenotype_list_path = os.path.join(TCGA_DATA_DIR,phenotype_file_name)
     f = open(phenotype_list_path, 'r')
     phenotype_profile = [l.strip().split('\t') for l in f]
     f.close()

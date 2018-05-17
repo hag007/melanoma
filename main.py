@@ -9,14 +9,14 @@ import numpy.random
 from sklearn.datasets import fetch_mldata
 import sklearn.preprocessing
 import numpy as np
-import matplotlib as mpl
+# import matplotlib as mpl
 #mpl.use('Agg')
 import scipy.special
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
-import matplotlib.pyplot as plt
-from matplotlib import style
-style.use("ggplot")
+# import matplotlib.pyplot as plt
+# from matplotlib import style
+# style.use("ggplot")
 from sklearn import svm
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV, cross_val_score
@@ -24,18 +24,18 @@ from sklearn.model_selection import PredefinedSplit
 from sklearn.metrics import accuracy_score
 import scipy
 from scipy.stats import hypergeom
-from statsmodels.sandbox.stats.multicomp import fdrcorrection0
+# from statsmodels.sandbox.stats.multicomp import fdrcorrection0
 import time
-from matplotlib.ticker import FormatStrFormatter
+# from matplotlib.ticker import FormatStrFormatter
 import math
 import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
 logger.addHandler(sh)
 from constants import *
-from clusters_similarity import *
+#from clusters_similarity import *
 from significant_enrichment import *
-from svm import *
+#from svm import *
 from fre import *
 
 # (1) similarity caller:
@@ -56,16 +56,44 @@ from fre import *
 # find_expression_significance("oxidation_genes.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_421.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 421)
 # find_expression_significance("top420s.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_421.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 420)
 # find_expression_significance("oxidative.txt", "protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_8490_194.npy", pval_preprocessing_file_name = "pvals_protein_coding.txt", N=8490, B = 194)
+
 #------ mirna ------------:
-find_expression_significance("mir_test.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_42.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 42)
-# find_expression_significance("sanity_2.txt", "sanity_3.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_3_2.npy", pval_preprocessing_file_name = "pvals_mirna_sanity.txt", N=3, B = 2)
+# find_expression_significance("mir-MT-ATP6-244.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_244.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 244)
+# find_expression_significance("mir-MT-ATP8-161.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_161.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 161)
+# find_expression_significance("mir-MT-ND4L-427.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_427.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 427)
+# find_expression_significance("mir-MT-ND5-161.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_161.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 161)
+# find_expression_significance("mir-mt-total.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_707.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 707)
+# find_expression_significance("mir-shc1-493.txt", "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", hgt_preprocessing_file_name = "HGTs_out_1610_493.npy", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610, B = 493)
+
+# mHGT_list = ['mir-tami_metabolism-ATP5G.txt', 'mir-tami_metabolism-SOD2.txt', 'mir-tami_metabolism-ATP5D.txt', 'mir-tami_metabolism-CATALASE.txt', 'mir-tami_metabolism-PPARGC1A.txt', 'mir-tami_metabolism-SLC25A4.txt', 'mir-tami_metabolism-PPRC1.txt', 'mir-tami_metabolism-NDUFA8.txt', 'mir-tami_metabolism-PCG1A.txt', 'mir-tami_metabolism-SOD1.txt', 'mir-tami_metabolism-ATP5B.txt', 'mir-tami_mito-SLC2A4.txt', 'mir-tami_mito-Hk2.txt', 'mir-tami_mito-PKM.txt', 'mir-tami_mito-Pdk1.txt', 'mir-tami_mito-LDHA.txt', 'mir-tami_extra-MCT4.txt', 'mir-tami_extra-MCM10.txt', 'mir-tami_extra-POLD3.txt', 'mir-tami_extra-SLC2A1.txt', 'mir-tami_extra-IGFBP3.txt', 'mir-tami_extra-hk1.txt']
+# pvals = []
+# for cur in mHGT_list:
+#     pvals.append(find_expression_significance(cur, "mir_total.txt", "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", pval_preprocessing_file_name = "pvals_mirna.txt", N=1610))
+# print mHGT_list
+# print pvals
+
 
 # (3) call
-# predict_tumor_type_by_tested_gene_expression(["oxidative.txt", "oxidation_genes.txt", "mito.txt", "apoptosis_genes.txt", "lysosome_genes.txt", "lipid_synthase_genes.txt", "top420s.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=100)
-# predict_tumor_type_by_tested_gene_expression(["test.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=10)
+# predict_tumor_type_by_tested_gene_expression(["oxidative.txt", "oxidation_genes.txt", "mito.txt", "apoptosis_genes.txt", "lysosome_genes.txt", "lipid_synthase_genes.txt", "top420s.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=100)
+# predict_tumor_type_by_tested_gene_expression(["oxidative.txt", "oxidation_genes.txt", "mito.txt", "apoptosis_genes.txt", "lysosome_genes.txt", "lipid_synthase_genes.txt", "top420s.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100)
+# predict_tumor_type_by_tested_gene_expression(["test.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", gene_filter_file_name="protein_coding.txt", rounds=10)
+predict_tumor_type_by_tested_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=30)
+predict_tumor_type_by_tested_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=30)
+predict_tumor_type_by_tested_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm-uq.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=30)
+#------ mirna ------------:
+# predict_tumor_type_by_tested_gene_expression(["mir-MT-ATP6-244.txt", "mir-MT-ATP8-161.txt", "mir-MT-ND4L-427.txt", "mir-MT-ND5-161.txt"], "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, rounds=100)
+# predict_tumor_type_by_tested_gene_expression(['mir-tami_metabolism-ATP5G.txt', 'mir-tami_metabolism-SOD2.txt', 'mir-tami_metabolism-ATP5D.txt', 'mir-tami_metabolism-CATALASE.txt', 'mir-tami_metabolism-PPARGC1A.txt', 'mir-tami_metabolism-SLC25A4.txt', 'mir-tami_metabolism-PPRC1.txt', 'mir-tami_metabolism-NDUFA8.txt', 'mir-tami_metabolism-PCG1A.txt', 'mir-tami_metabolism-SOD1.txt', 'mir-tami_metabolism-ATP5B.txt', 'mir-tami_mito-SLC2A4.txt', 'mir-tami_mito-Hk2.txt', 'mir-tami_mito-PKM.txt', 'mir-tami_mito-Pdk1.txt', 'mir-tami_mito-LDHA.txt', 'mir-tami_extra-MCT4.txt', 'mir-tami_extra-MCM10.txt', 'mir-tami_extra-POLD3.txt', 'mir-tami_extra-SLC2A1.txt', 'mir-tami_extra-IGFBP3.txt', 'mir-tami_extra-hk1.txt'], "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, rounds=30)
+# predict_tumor_type_by_tested_gene_expression(["mir-MT-ATP6-244.txt", "mir-MT-ATP8-161.txt", "mir-MT-ND4L-427.txt", "mir-MT-ND5-161.txt"], "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, rounds=100)
+# predict_tumor_type_by_tested_gene_expression(["mir_total.txt"], "TCGA-SKCM.mirna.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, rounds=30)
 
 # (4)
-# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rounds=5, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", is_randomized=True)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=5, recursion_step_size=100, recursion_number_of_steps=80, start_index = 0, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=NORMAL)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=5, recursion_step_size=50, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=NORMAL)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=5, recursion_step_size=50, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=5, recursion_step_size=50, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=2, recursion_step_size=200, recursion_number_of_steps=50, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=REVERSED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=2, recursion_step_size=200, recursion_number_of_steps=50, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=REVERSED)
+
 
 
 # primaries_avg = []
