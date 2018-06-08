@@ -18,12 +18,8 @@ logger.addHandler(sh)
 BASE_PROFILE="D:\\omics"
 BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 
-LABEL_ID = "sample_type.samples"
-PRIMARY_TUMOR = "Primary Tumor"
-METASTATIC = "Metastatic"
 
-
-def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
+def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="TCGA",dataset="breast"): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
         gene_list_path = os.path.join(BASE_PROFILE,source,dataset,gene_list_file_name)
     f = open(gene_list_path,'r')

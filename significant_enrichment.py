@@ -116,9 +116,11 @@ def calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b
 def find_expression_significance(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, source="GDC-TCGA",dataset="melanoma", hgt_preprocessing_file_name = None, pval_preprocessing_file_name= None, N = None, B = None):
     print "about ot analyse: {}".format(tested_gene_list_file_name)
     # fetch gene expression by gene_id, divided by tumor type
-    primary_expression, metastatic_expression = load_expression_profile_by_gene_and_tumor_type(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path, source,dataset)
-    primary_expression = np.rot90(np.flip(primary_expression, 1), k=-1, axes=(1,0))
-    metastatic_expression = np.rot90(np.flip(metastatic_expression, 1), k=-1, axes=(1, 0))
+    groups = load_expression_profile_by_labelling(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path, source, dataset)
+    group_0_expression = groups[0]
+    group_1_expression = groups[1]
+    group_0_expression = np.rot90(np.flip(group_0_expression, 1), k=-1, axes=(1,0))
+    group_1_expression = np.rot90(np.flip(group_1_expression, 1), k=-1, axes=(1, 0))
 
     # test pval for significance differentiation between label values (primar vs metastatic)
     if os.path.isfile(os.path.join(CACHE_DIR, pval_preprocessing_file_name)) and USE_CACHE:
@@ -127,11 +129,11 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     else:
         pvals = []
         gene_symbols = []
-        for  i in range(1,len(primary_expression)):
-            cur_pval = scipy.stats.ttest_ind([float(c) for c in primary_expression[i][1:]], [float(c) for c in metastatic_expression[i][1: ]])[1]
+        for  i in range(1,len(group_0_expression)):
+            cur_pval = scipy.stats.ttest_ind([float(c) for c in group_0_expression[i][1:]], [float(c) for c in group_1_expression[i][1: ]])[1]
             if not math.isnan(cur_pval):
                 pvals.append(cur_pval)
-                gene_symbols.append(primary_expression[i][0])
+                gene_symbols.append(group_0_expression[i][0])
 
         # sort gene_id-pval pairs by pval
         gene_pval_pair = zip(gene_symbols,pvals)
@@ -226,8 +228,7 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     # correct pval (i.e generate qvals out of pvals)
     fdr_results = fdrcorrection0(pvals, alpha=0.05, method='indep', is_sorted=True)
     true_counter = len([cur for cur in fdr_results[0] if cur == True])
-    print "true hypothesis: {}".format(true_counter)
-    print "total hypothesis: {}".format(np.size(fdr_results[0]))
+    print "true hypothesis: {}/{}".format(true_counter, np.size(fdr_results[0]))
 
     return pval
 

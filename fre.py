@@ -20,6 +20,7 @@ logger.addHandler(sh)
 from constants import *
 from infra import *
 from svm import *
+from statsmodels.sandbox.stats.multicomp import fdrcorrection0
 
 RANDOMIZED = "randomized"
 REVERSED = "reversed"
@@ -67,27 +68,28 @@ def print_fre_results(test_scores, rounds, tested_gene_list_file_name, rank_meth
     return avgs, vars
 
 # (4) main
-def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name, rank_method, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=2, start_index = 0, recursion_number_of_steps=20, pval_preprocessing_file_name = None, permutation=NORMAL):
-
+def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=2, start_index = 0, recursion_number_of_steps=20, pval_preprocessing_file_name = None, permutation=NORMAL, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}):
+    thismodule = sys.modules[__name__]
+    clf = getattr(thismodule, classification_method)(tuning_parameters)
     print "about ot analyse: {}".format(tested_gene_list_file_name)
     # fetch gene expression by gene_id, divided by tumor type
-    data, labels, primary_expression, metastatic_expression, gene_ids = load_svm_data(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name,
-                                 gene_filter_file_name)
     # test pval for significance differentiation between label values (primar vs metastatic)
+    data, labels, groups, gene_ids = load_svm_data(tested_gene_list_file_name, expression_profile_file_name, phenotype_file_name,
+                                                   gene_filter_file_name=gene_filter_file_name, groups = groups)
     if os.path.isfile(os.path.join(CACHE_DIR, pval_preprocessing_file_name)) and USE_CACHE:
         gene_pval_pair = load_sets(os.path.join(CACHE_DIR, pval_preprocessing_file_name))
         print "pval loaded from file"
     else:
-        primary_expression = np.rot90(np.flip(primary_expression, 1), k=-1, axes=(1, 0))
-        metastatic_expression = np.rot90(np.flip(metastatic_expression, 1), k=-1, axes=(1, 0))
+        group_0_expression = groups[0]
+        group_1_expression = groups[1]
         pvals = []
         gene_symbols = []
-        for i in range(1, len(primary_expression)):
-            cur_pval = scipy.stats.ttest_ind([float(c) for c in primary_expression[i][1:]],
-                                             [float(c) for c in metastatic_expression[i][1:]])[1]
+        for i in range(1, len(group_0_expression)):
+            cur_pval = scipy.stats.ttest_ind([float(c) for c in group_0_expression[i][1:]],
+                                             [float(c) for c in group_1_expression[i][1:]])[1]
             if not math.isnan(cur_pval):
                 pvals.append(cur_pval)
-                gene_symbols.append(primary_expression[i][0])
+                gene_symbols.append(group_0_expression[i][0])
 
         # sort gene_id-pval pairs by pval
         gene_pval_pair = zip(gene_symbols, pvals)
@@ -96,16 +98,25 @@ def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file
                   os.path.join(CACHE_DIR, os.path.join(CACHE_DIR, pval_preprocessing_file_name)))
         print "pval saved to file"
 
+    # calculate number of true hyphothesis after correction
+    pvals = [cur[1] for cur in gene_pval_pair]
+    fdr_results = fdrcorrection0(pvals, alpha=0.05, method='indep', is_sorted=True)
+    true_counter = len([cur for cur in fdr_results[0] if cur == True])
+    print "true hypothesis: {}/{}".format(true_counter, np.size(fdr_results[0]))
+
     gene_ids_ranked = [cur[0] for cur in gene_pval_pair]
+    gene_ids_ranked = gene_ids_ranked[:true_counter]
     if permutation == RANDOMIZED:
         random.shuffle(gene_ids_ranked)
     elif permutation == REVERSED:
         gene_ids_ranked = list(reversed(gene_ids_ranked))  # random.shuffle(gene_ids_ranked)
     train_scores = []
-    test_scores = []
+    test_auPR_scores = []
+    test_auROC_scores = []
     for j in range(recursion_number_of_steps):
         train_scores.append([])
-        test_scores.append([])
+        test_auPR_scores.append([])
+        test_auROC_scores.append([])
     genelist_datasets = filter_gene_expressions_preprocessed(data, gene_ids_ranked, recursion_number_of_steps,
                                                              recursion_step_size, start_index, gene_ids)
     for i in range(rounds):
@@ -116,9 +127,13 @@ def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file
             # cur_dataset = filter_gene_expressions(genelist_dataset, gene_ids_ranked[:recursion_step_size*(j+1)], gene_ids)
             cur_dataset = genelist_datasets[j]
             data_train, data_test, labels_train, labels_test = divide_train_and_test_groups(cur_dataset, labels)
-            tuned_parameters = {'C': [10], 'kernel': ['rbf']}
-            test_accuracy = apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test, rank_method)
-            test_scores[j].append(test_accuracy)
+            test_auPR, test_auROC = apply_svm(clf, data_train, labels_train, data_test, labels_test, rank_method)
+            test_auPR_scores[j].append(test_auPR)
+            test_auROC_scores[j].append(test_auROC)
     print "#######################################"
-    avgs, vars = print_fre_results(test_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
+    print "AUPR results:"
+    avgs, vars = print_fre_results(test_auPR_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
+    print avgs
+    print "AUROC results:"
+    avgs, vars = print_fre_results(test_auROC_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
     print avgs

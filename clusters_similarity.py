@@ -38,7 +38,10 @@ from infra import *
 
 # (1) main
 def find_expression_similarity_profile(gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_list_path=None, gene_expression_path=None, phenotype_path=None, source="GDC-TCGA",dataset="melanoma"):
-    primary_labeled, metastatic_labeled = load_expression_profile_by_gene_and_tumor_type(gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, phenotype_path=phenotype_path, source=source,dataset=dataset)
+    groups = load_expression_profile_by_labelling(gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, phenotype_path=phenotype_path, source=source, dataset=dataset)
+
+    primary_labeled = groups[0]
+    metastatic_labeled = groups[1]
 
     similarity_primary = []
     similarity_metastatic = []

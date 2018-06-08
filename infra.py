@@ -21,12 +21,12 @@ import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
 logger.addHandler(sh)
-from constants import *
+import constants
 ############################################ infra ########################################
 
 def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(LIST_DIR,gene_list_file_name)
+        gene_list_path = os.path.join(constants.LIST_DIR,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -43,13 +43,12 @@ def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name,
     # gene_list = gene_list[:400]
     if gene_filter_file_name:
         stopwatch.start()
-        filter_gene_list = load_gene_list(gene_list_file_name=gene_filter_file_name, gene_list_path=gene_filter_path,
-                                          source=source, dataset=dataset)
+        filter_gene_list = load_gene_list(gene_list_file_name=gene_filter_file_name, gene_list_path=gene_filter_path)
         gene_list = [cur for cur in gene_list if cur in filter_gene_list]
         print stopwatch.stop("done filter gene list")
 
     if gene_expression_path == None:
-        gene_expression_path = os.path.join(TCGA_DATA_DIR, gene_expression_file_name)
+        gene_expression_path = os.path.join(constants.TCGA_DATA_DIR, gene_expression_file_name)
         stopwatch.start()
     f = open(gene_expression_path,'r')
     expression_profiles_filtered = [l.strip().split() for i, l in enumerate(f) if i==0 or l[:l.strip().find('\t')].split(".")[0] in gene_list]
@@ -74,26 +73,70 @@ def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expressio
 
 def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):
     if not phenotype_list_path:
-        phenotype_list_path = os.path.join(TCGA_DATA_DIR,phenotype_file_name)
+        phenotype_list_path = os.path.join(constants.TCGA_DATA_DIR,phenotype_file_name)
     f = open(phenotype_list_path, 'r')
     phenotype_profile = [l.strip().split('\t') for l in f]
     f.close()
     return phenotype_profile
 
 
-def divided_patient_ids_by_tumor_type(phenotype_list_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):
+def divided_patient_ids_by_label(phenotype_list_file_name, phenotype_list_path=None, labels=None, label_values=None, groups=None):
+    if not groups and any(labels):
+        divided_patient_ids_by_label_old(phenotype_list_file_name, phenotype_list_path, labels, label_values)
+        return
+    if not groups and not any(labels):
+        groups = [{"sample_type.samples" :{"type": "string", "value": ["Primary Tumor"]}},
+                  {"sample_type.samples": {"type": "string", "value": ["Metastatic"]}}]
     phenotype_data_formatted = load_phenotype_data(phenotype_list_file_name, phenotype_list_path)
     headers = phenotype_data_formatted[0]
     phenotype_profiles = phenotype_data_formatted[1:]
-    primary_tumor_patients = []
-    metastatic_patients = []
-    label_index = [i for i, v in enumerate(headers) if v == LABEL_ID][0]
+    patients_by_labeling = []
+    for i in range(len(groups)):
+        patients_by_labeling.append([])
+    label_indices = []
+    duplicates_counter = 0
+    for i, pp in enumerate(phenotype_profiles):
+        for j, cur_group in enumerate(groups):
+            dup=0
+            is_hold_constraits = True
+            for k,v in cur_group.iteritems():
+                if v['type'] == "string":
+                    if not any([pp[headers.index(k)] == cur for cur in v["value"]]):
+                        is_hold_constraits = False
+            if is_hold_constraits:
+                patients_by_labeling[j].append(pp[0])
+                dup+=1
+        if dup > 1:
+            duplicates_counter+=1
+    print "number of duplciated patients: {}".format(duplicates_counter)
+
+    return (patients_by_labeling)
+
+
+def divided_patient_ids_by_label_old(phenotype_list_file_name, phenotype_list_path=None, labels=None, label_values=None,
+                                 group_0=None, group_1=None):
+    if not labels:
+        labels = [constants.LABEL_ID]
+    if type(labels) is not list:
+        labels = [labels]
+    if not label_values:
+        label_values = [[constants.PRIMARY_TUMOR], [constants.METASTATIC]]
+    if type(label_values[0]) is not list:
+        label_values = [[label_values[0]], [label_values[1]]]
+    phenotype_data_formatted = load_phenotype_data(phenotype_list_file_name, phenotype_list_path)
+    headers = phenotype_data_formatted[0]
+    phenotype_profiles = phenotype_data_formatted[1:]
+    label_0_patients = []
+    label_1_patients = []
+    label_indices = []
+    for label in labels:
+        label_indices.append([i for i, v in enumerate(headers) if v == label][0])
     for pp in phenotype_profiles:
-        if pp[label_index] == PRIMARY_TUMOR:
-            primary_tumor_patients.append(pp[0])
-        elif pp[label_index] == METASTATIC:
-            metastatic_patients.append(pp[0])
-    return (primary_tumor_patients,metastatic_patients)
+        if all([pp[cur_idx] == label_values[0][i] for i, cur_idx in enumerate(label_indices)]):
+            label_0_patients.append(pp[0])
+        elif all([pp[cur_idx] == label_values[1][i] for i, cur_idx in enumerate(label_indices)]):
+            label_1_patients.append(pp[0])
+    return (label_0_patients, label_1_patients)
 
 # def transform_to_map(tbl):
 #     map = {}
@@ -102,30 +145,35 @@ def divided_patient_ids_by_tumor_type(phenotype_list_file_name, phenotype_list_p
 #     return map
 
 # load expression profile filtered by an external genes list and divided according tumor type label
-def load_expression_profile_by_gene_and_tumor_type(gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_path=None, source="GDC-TCGA",dataset="melanoma"):
+def load_expression_profile_by_labelling(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_path=None, groups=None):
 
-    expression_profiles_formatted = load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, source=source,dataset=dataset)
-    primary_patients, metastatic_patients = divided_patient_ids_by_tumor_type(phenotype_file_name, phenotype_path)
+    expression_profiles_formatted = load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path)
+    patients_by_labeling = divided_patient_ids_by_label(phenotype_file_name, phenotype_path, label, label_values, groups)
 
-    expression_profiles_primary = []
-    expression_profiles_metastatic = []
+    expression_profiles_by_labeling = []
+    for i in groups:
+        expression_profiles_by_labeling.append([])
     logger.info("about to split expression by primary tumor and metastatic")
 
     logger.info("expression_profile size: {},{}".format(*np.shape(expression_profiles_formatted)))
     for i,cur in enumerate(expression_profiles_formatted):
         if i==0: # that is, vertical headers
-            expression_profiles_primary.append(cur)
-            expression_profiles_metastatic.append(cur)
-        elif expression_profiles_formatted[i][0] in primary_patients:
-            expression_profiles_primary.append(cur)
-        elif expression_profiles_formatted[i][0] in metastatic_patients:
-            expression_profiles_metastatic.append(cur)
-        else:
-            logger.info("no tumor type for {}".format(expression_profiles_formatted[i][0]))
+            for cur_group in expression_profiles_by_labeling:
+                cur_group.append(cur)
+        cur_id = expression_profiles_formatted[i][0]
+        if not str.isdigit(cur_id[-1]) and constants.PHENOTYPE_FORMAT == "TCGA":
+            cur_id = cur_id[:-1]
+        patient_found = False
+        for k, cur_group in enumerate(expression_profiles_by_labeling):
+            if cur_id in patients_by_labeling[k]:
+                expression_profiles_by_labeling[k].append(cur)
+                patient_found = True
+        if not patient_found:
+            logger.info("no labeling option were found for {}".format(expression_profiles_formatted[i][0]))
 
     print "done split expression"
 
-    return (expression_profiles_primary, expression_profiles_metastatic)
+    return expression_profiles_by_labeling
 
 def nCk(n,k):
   return long( reduce(mul, (Fraction(n-i, i+1) for i in range(k)), 1) )
@@ -134,13 +182,13 @@ def save_sets(st,fl_name):
     fl = open(fl_name,'w+')
     for cur in st:
         for n in cur:
-            fl.write(str(n)+SEPARATOR)
+            fl.write(str(n)+constants.SEPARATOR)
         fl.write('\n')
 
 def load_sets(fl_name):
     lst = []
     fl = open(fl_name,'r')
     for cur in fl.readlines():
-        lst.append(cur.split(SEPARATOR)[:-1])
+        lst.append(cur.split(constants.SEPARATOR)[:-1])
         lst[-1][-1] = float(lst[-1][-1])
     return lst

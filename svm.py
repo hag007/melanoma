@@ -1,3 +1,5 @@
+import sys
+import mord
 import scipy.special
 from matplotlib import style
 style.use("ggplot")
@@ -23,41 +25,36 @@ LOGISTIC_REGRESSION = "logistic_regression"
 
 ############################################(3) SVM to see whether we can predict tumor type by tested genes' profile expression########################################
 
-def load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, gene_filter_file_name=None):
+def load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, groups=None):
     data = []
     labels = []
-    primary_labeled, metastatic_labeled = load_expression_profile_by_gene_and_tumor_type(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, gene_filter_file_name)
+    labeled_groups = load_expression_profile_by_labelling(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label, label_values, gene_filter_file_name, groups=groups)
+    print "groups sizes: {}".format([len(cur_group) for cur_group in labeled_groups])
+    labeled_groups = sorted(labeled_groups, key = lambda x: len(x))
 
-    for cur in primary_labeled[1:]:
-        data.append(cur[1:].astype(np.float))
-        labels.append(0)
-    max_len = len(labels)
-    # data.append([30 for i in cur[1:]])
-    for cur in metastatic_labeled[1:]:
-        data.append(cur[1:].astype(np.float))
-        labels.append(1)
-        # if len(labels) == max_len*2:
-        #     break
-
-    # plt.title('Actual Function')
-    # heatmap = plt.pcolor(np.rot90(np.flip(data,1), k=-1, axes=(1,0)))
-    # plt.show()
+    for i, cur_group in enumerate(labeled_groups):
+        for cur in cur_group[1:]:
+            data.append(cur[1:].astype(np.float))
+            labels.append(i)
 
 
-    return data, labels, primary_labeled, metastatic_labeled, primary_labeled[0]
+    return data, labels, labeled_groups, labeled_groups[0][0][1:]
 
 def randonize_patients(data, labels):
-    total  = zip(data, labels)
-    random.shuffle(total)
-    # results = zip(*total)
-    return zip(*total)
 
+    while True:
+        total  = zip(data, labels)
+        random.shuffle(total)
+        data, label = zip(*total)
+        if sum(label[(3 * len(label)) / 4:]) % len(label[(3 * len(label)) / 4:]) != 0 and \
+            sum(label[:(3 * len(label)) / 4]) % len(label[:(3 * len(label)) / 4]) != 0:
+            break
+    return (data, label)
 def randonize_patients_old(data, labels):
     total = np.c_[data, labels]
     random.shuffle(total)
     # results = zip(*total)
     return total[:,:-1], total[:,-1]
-
 
 
 def divide_train_and_test_groups(data, labels):
@@ -67,8 +64,13 @@ def divide_train_and_test_groups(data, labels):
     labels_test = labels[(3 * len(data)) / 4:]
     return data_train, data_test, labels_train, labels_test
 
-def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test, rank_method):
-    gs_train = GridSearchCV(svm.SVC(probability=True), param_grid=tuned_parameters, return_train_score=True)
+def svm_rbf_default(tuned_parameters):
+    return GridSearchCV(svm.SVC(probability=True), param_grid=tuned_parameters, return_train_score=True)
+
+def svm_multiclass(tuned_parameters):
+    return mord.LogisticAT(alpha=1.)
+
+def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank_method):
 
     data_train = [[cur2 for cur2 in cur1] for cur1 in data_train]
     labels_train = [cur for i, cur in enumerate(labels_train)]
@@ -85,12 +87,16 @@ def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test
     # shuffled: random.shuffle(labels_train)
     # shuffled: random.shuffle(labels_test)
 
-    gs_train.fit(data_train, labels_train)
-    predicted_results = gs_train.predict(data_test)
+    data_train=np.array(data_train)
+    labels_train=np.array(labels_train)
+    data_test = np.array(data_test)
+    labels_test = np.array(labels_test)
+    clf_method.fit(data_train, labels_train)
+    predicted_results = clf_method.predict(data_test)
     if rank_method == DISTANCE:
-        probabilities = gs_train.decision_function(data_test)
+        probabilities = clf_method.decision_function(data_test)
     else:
-        probabilities = gs_train.predict_proba(data_test)
+        probabilities = clf_method.predict_proba(data_test)
         probabilities = probabilities[:,1]
     #zipped = zip(probabilities, data_train, labels_train)
     #zipped_sorted = sorted(zipped, key=lambda x: x[0])
@@ -103,7 +109,7 @@ def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test
     auc = roc_auc_score(labels_test, probabilities)
 
 
-    # prediction = gs_train.predict(data_test)
+    # prediction = clf_method.predict(data_test)
     # predicted_positives = sum(prediction)
     # predicted_negatives = len(prediction) - predicted_positives
     # labeled_positives = sum(labels_test)
@@ -129,7 +135,7 @@ def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test
     #
     # accuracy = 1 - float(sum(abs(prediction - labels_test)))/len(labels_test)
 
-    # print "average_precision: {}, accuracy: {}".format(average_precision,accuracy) ## , fp: {}, fn: {}, total: {}  ## , fp[-1], fn[-1], len(prediction))
+    print "PR: {}, ROC: {}".format(average_precision,auc) ## , fp: {}, fn: {}, total: {}  ## , fp[-1], fn[-1], len(prediction))
 
     # plt.plot(recall_1, precision_1, label="PRAUC")
     # plt.step(recall, precision, color='b', alpha=0.2,
@@ -165,7 +171,7 @@ def apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test
     #################
     ##
     # ta = (len(labels_test) * 1.0 - sum([abs(p - r) for p, r in zip(predicted_results, labels_test)])) / (len(labels_test) * 1.0)
-    # return gs_train.best_score_, ta
+    # return clf_method.best_score_, ta
     return average_precision, auc
 
 def print_svm_results(train_scores, train_alt_scores, test_scores, test_alt_scores, rounds):
@@ -187,7 +193,7 @@ def print_svm_results(train_scores, train_alt_scores, test_scores, test_alt_scor
 
 def print_svm_results(test_scores, rounds):
     avgs = []
-    print "PR-AUC: avg and var:"
+    print "start avg and var:"
     for i, cur_i in enumerate(test_scores):
         avg = sum(test_scores[i]) / rounds
         print "{}\t {}".format(avg, np.var(test_scores[i]))
@@ -214,10 +220,10 @@ def print_svm_results(test_scores, rounds):
             if results_summarized[i][j] == -1:
                 results_summarized[i][j] = results_summarized[j][i]
 
-    for i, cur_i in enumerate(avgs):
-        print ""
-        for j, cur_j in enumerate(avgs):
-            print "{}\t".format(results_summarized[i][j]),
+    # for i, cur_i in enumerate(avgs):
+    #     print ""
+    #     for j, cur_j in enumerate(avgs):
+    #         print "{}\t".format(results_summarized[i][j]),
 
     # print "{}".format(train_score_sum / rounds)
     # print "{}".format(train_alt_score_sum / rounds)
@@ -228,12 +234,13 @@ def print_svm_results(test_scores, rounds):
 
 
 # (3) main
-def predict_tumor_type_by_tested_gene_expression(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, rank_method, gene_filter_file_name=None, rounds=2):
-
+def prediction_by_gene_expression(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}):
+    thismodule = sys.modules[__name__]
+    clf = getattr(thismodule, classification_method)(tuning_parameters)
     genelist_datasets = []
     for tested_gene_file_name in tested_gene_file_names:
-        data, labels , _1, _2, _3 = load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name,
-                                     gene_filter_file_name)
+        data, labels , _1, _2 = load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label, label_values,
+                                     gene_filter_file_name, groups)
         genelist_datasets.append(data)
 
     train_scores = []
@@ -249,8 +256,8 @@ def predict_tumor_type_by_tested_gene_expression(tested_gene_file_names, express
         genelist_datasets = np.rot90(genelist_datasets, k=-1, axes=(1, 0))
         for j, cur_dataset in enumerate(genelist_datasets):
             data_train, data_test, labels_train, labels_test = divide_train_and_test_groups(cur_dataset, labels)
-            tuned_parameters = {'C': [10], 'kernel': ['rbf']}
-            test_pr, test_roc = apply_svm(tuned_parameters, data_train, labels_train, data_test, labels_test, rank_method)
+
+            test_pr, test_roc = apply_svm(clf, data_train, labels_train, data_test, labels_test, rank_method)
             test_pr_score[j].append(test_pr)
             test_roc_score[j].append(test_roc)
     print "#######################################"
