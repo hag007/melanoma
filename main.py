@@ -149,8 +149,11 @@ from feature_selection import *
 #             {"person_neoplasm_cancer_status": {"type": "string", "value": ["TUMOR FREE"]}}])
 
 
-find_sets_correlations(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "ldha.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
-                       total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
+# find_sets_correlations(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "ldha.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
+#                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
+
+prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=1)
+
 
 
 # tumor_stage.diagnoses

@@ -17,7 +17,9 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
-
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Color, PatternFill, Font, Border, Side, Alignment
 
 DISTANCE = "distance"
 LOGISTIC_REGRESSION = "logistic_regression"
@@ -239,10 +241,12 @@ def prediction_by_gene_expression(tested_gene_file_names, expression_profile_fil
     thismodule = sys.modules[__name__]
     clf = getattr(thismodule, classification_method)(tuning_parameters)
     genelist_datasets = []
+    gene_list_sizes = []
     for tested_gene_file_name in tested_gene_file_names:
         data, labels , _1, _2 = load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label, label_values,
                                      gene_filter_file_name, groups)
         genelist_datasets.append(data)
+        gene_list_sizes.append(np.shape(data)[1])
 
     train_scores = []
     test_pr_score = []
@@ -266,3 +270,86 @@ def prediction_by_gene_expression(tested_gene_file_names, expression_profile_fil
     print_svm_results(test_pr_score, float(rounds))
     print "ROC"
     print_svm_results(test_roc_score, float(rounds))
+    print_to_excel(gene_sets_names=[cur.split('.')[0] for cur in tested_gene_file_names], gene_sets_sizes=gene_list_sizes, results=(test_pr_score, test_roc_score), ranking_method="LOGISTIC_REGRESSION")
+
+
+def print_to_excel(gene_sets_names = ["a", "b", "c"], gene_sets_sizes = [1,1,1], results=None, ranking_method= "LOGISTIC_REGRESSION"):
+    wb = Workbook()#ffff00
+    ws = wb.active
+    yellowFill = PatternFill(start_color='00FFFF00',
+                          end_color='00FFFF00',
+                          fill_type='solid')
+    bd = Side(style='thin', color="000000")
+    border = Border(left=bd, top=bd, right=bd, bottom=bd)
+
+    ws.column_dimensions["A"].width = 20
+
+    ws['A1'].border = border
+    ws['A1'].fill = yellowFill
+    ws['B1'].border = border
+    ws['B1'].fill = yellowFill
+    for i in range(len(gene_sets_names)):
+        ws.merge_cells('{}1:{}1'.format(chr(67+i*2), chr(67+i*2+1)))
+        ws['{}1'.format(chr(67+i*2))].border = border
+        ws['{}1'.format(chr(67 + i * 2+1))].border = border
+        ws['{}1'.format(chr(67 + i * 2))].fill = yellowFill
+        ws['{}1'.format(chr(67 + i * 2))] = gene_sets_names[i] + " (n={})".format(gene_sets_sizes[i])
+        ws['{}1'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center', wrap_text=True)
+
+    blueDarkFill = PatternFill(start_color='006699FF',
+                             end_color='006699FF',
+                             fill_type='solid')
+    blueMediumFill = PatternFill(start_color='0099CCFF',
+                               end_color='0099CCFF',
+                               fill_type='solid')
+    blueLightFill = PatternFill(start_color='00E6F3FF',
+                                 end_color='00E6F3FF',
+                                 fill_type='solid')
+    border = Border(left=bd, top=bd, right=bd, bottom=bd)
+    ws['A2'].border = border
+    ws['A2'].fill = blueDarkFill
+    ws['B2'].border = border
+    ws['B2'].fill = blueMediumFill
+    for i in range(len(gene_sets_names)):
+        ws['{}2'.format(chr(67 + i * 2))].border = border
+        ws['{}2'.format(chr(67 + i * 2))].fill = blueMediumFill
+        ws['{}2'.format(chr(67 + i * 2))] = "avg"
+        ws['{}2'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center')
+
+        ws['{}2'.format(chr(67 + i * 2+1))].border = border
+        ws['{}2'.format(chr(67 + i * 2+1))].fill = blueMediumFill
+        ws['{}2'.format(chr(67 + i * 2+1))] = "var"
+        ws['{}2'.format(chr(67 + i * 2+1))].alignment = Alignment(horizontal='center')
+
+    ws['A3'].border = border
+    ws['A3'].fill = blueDarkFill
+    ws['A4'].border = border
+    ws['A4'].fill = blueDarkFill
+    ws.merge_cells('A3:A4')
+    ws['A3'] = ranking_method
+    ws['A3'].alignment = Alignment(horizontal='center')
+
+    ws['B3'].border = border
+    ws['B3'].fill = blueMediumFill
+    ws['B3'] = "PR"
+    ws['B3'].alignment = Alignment(horizontal='center')
+    ws['B4'].border = border
+    ws['B4'].fill = blueMediumFill
+    ws['B4'] = "ROC"
+    ws['B4'].alignment = Alignment(horizontal='center')
+
+    for k in range(len(list(results))):
+        for i in range(len(gene_sets_names)):
+            ws['{}{}'.format(chr(67 + i * 2),3+k)].border = border
+            ws['{}{}'.format(chr(67 + i * 2),3+k)].fill = blueLightFill
+            ws['{}{}'.format(chr(67 + i * 2),3+k)] = sum(results[k][i])/ len(results[k][i])
+            ws['{}{}'.format(chr(67 + i * 2),3+k)].alignment = Alignment(horizontal='center')
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].number_format = '0.000'
+            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].border = border
+            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].fill = blueLightFill
+            ws['{}{}'.format(chr(67 + i * 2+1),3+k)] = np.var((results[k][i]))
+            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].alignment = Alignment(horizontal='center')
+            ws['{}{}'.format(chr(67 + i * 2+1), 3 + k)].number_format = '0.0000'
+    wb.save(os.path.join(constants.OUTPUT_DIR,"SVM_AUC-{}-{}.xlsx".format(ranking_method,time.time())))
+
+# print_to_excel()
