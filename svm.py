@@ -30,8 +30,9 @@ def load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype
     labels = []
     labeled_groups = load_expression_profile_by_labelling(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label, label_values, gene_filter_file_name, groups=groups)
     print "groups sizes: {}".format([len(cur_group) for cur_group in labeled_groups])
-    labeled_groups = sorted(labeled_groups, key = lambda x: len(x))
-
+    labeled_groups = sorted(labeled_groups, key = lambda x: len(x), reverse=True)
+    # min_size = min([len(cur) for cur in labeled_groups])
+    # labeled_groups = [cur[:min_size] for cur in labeled_groups]
     for i, cur_group in enumerate(labeled_groups):
         for cur in cur_group[1:]:
             data.append(cur[1:].astype(np.float))
@@ -96,8 +97,8 @@ def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank
     if rank_method == DISTANCE:
         probabilities = clf_method.decision_function(data_test)
     else:
-        probabilities = clf_method.predict_proba(data_test)
-        probabilities = probabilities[:,1]
+        probabilities = [cur[predicted_results[i]] for i, cur in enumerate(clf_method.predict_proba(data_test))]
+        # probabilities = probabilities[:,1]
     #zipped = zip(probabilities, data_train, labels_train)
     #zipped_sorted = sorted(zipped, key=lambda x: x[0])
     #patients_rank_sorted = [x[0] for x in zipped_sorted]

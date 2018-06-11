@@ -3,6 +3,7 @@ PHENOTYPE_FORMAT = "GDC"
 BASE_PROFILE="D:\\omics\\"
 BASE_DATASET= "{}GDC-TCGA\\melanoma\\".format(BASE_PROFILE)
 CACHE_DIR = "{}cache\\".format(BASE_DATASET)
+DICT_DIR = "{}dictionaries\\".format(BASE_DATASET)
 OUTPUT_DIR = "{}output\\".format(BASE_DATASET)
 LIST_DIR = "{}list\\".format(BASE_DATASET)
 TCGA_DATA_DIR = "{}tcga_data\\".format(BASE_DATASET)

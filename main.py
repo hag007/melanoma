@@ -35,6 +35,7 @@ logger.addHandler(sh)
 from constants import *
 #from clusters_similarity import *
 from significant_enrichment import *
+from gene_sets_correlation import *
 #from svm import *
 from fre import *
 from feature_selection import *
@@ -101,10 +102,10 @@ from feature_selection import *
 # RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=2, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=REVERSED)
 
 ## randomized by size
-# RFE("protein_coding.txt", "TCGA-SKCM.htseq_fpkm_normalized_by_patients.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=13, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
-# RFE("protein_coding.txt", "TCGA-SKCM.htseq_fpkm_normalized_by_patients.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=120, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
-# RFE("protein_coding.txt", "TCGA-SKCM.htseq_fpkm_normalized_by_patients.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=420, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
-# RFE("protein_coding.txt", "TCGA-SKCM.htseq_fpkm_normalized_by_patients.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=750, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=30, recursion_step_size=13, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=30, recursion_step_size=120, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=30, recursion_step_size=420, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = DISTANCE, rounds=30, recursion_step_size=750, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED)
 
 
 ##################### BRCA ########################
@@ -127,8 +128,8 @@ from feature_selection import *
 
 ##################### FEATURE SELECTION ################
 
-# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe", batches=100, epochs=20, label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]]) #Primary Tumor
-
+# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe", label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]]) #Primary Tumor , batches=100, epochs=20
+# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe", label=["sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]]) #Primary Tumor , batches=100, epochs=20
 # prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100, label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]])
 
 # prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100,
@@ -136,13 +137,20 @@ from feature_selection import *
 #                               group_1 = {"melanoma_clark_level_value" :{"type": "string", "value": ["IV", "V"]}, "sample_type.samples" :{"type": "string", "value": ["Metastatic"]}})
 
 
+# prediction_by_gene_expression(["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=30)
+
+
 # prediction_by_gene_expression(["oxidative.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100,
 #                               groups = [{"person_neoplasm_cancer_status" :{"type": "string", "value": ["WITH TUMOR"]}},
 #                               {"person_neoplasm_cancer_status" :{"type": "string", "value": ["TUMOR FREE"]}}])
-RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=400, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED,
-    groups=[{"person_neoplasm_cancer_status": {"type": "string", "value": ["WITH TUMOR"]}},
-            {"person_neoplasm_cancer_status": {"type": "string", "value": ["TUMOR FREE"]}}])
 
+# RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method = LOGISTIC_REGRESSION, rounds=30, recursion_step_size=400, recursion_number_of_steps=1, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=RANDOMIZED,
+#     groups=[{"person_neoplasm_cancer_status": {"type": "string", "value": ["WITH TUMOR"]}},
+#             {"person_neoplasm_cancer_status": {"type": "string", "value": ["TUMOR FREE"]}}])
+
+
+find_sets_correlations(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "ldha.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
+                       total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
 
 
 # tumor_stage.diagnoses

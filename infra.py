@@ -79,14 +79,22 @@ def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="G
     f.close()
     return phenotype_profile
 
+def load_survival_data(survival_file_name, survival_list_path=None, source="GDC-TCGA",dataset="melanoma"):
+    if not survival_list_path:
+        phenotype_list_path = os.path.join(constants.TCGA_DATA_DIR,survival_file_name)
+    f = open(phenotype_list_path, 'r')
+    phenotype_profile = [l.strip().split('\t') for l in f]
+    f.close()
+    return phenotype_profile
+
 
 def divided_patient_ids_by_label(phenotype_list_file_name, phenotype_list_path=None, labels=None, label_values=None, groups=None):
-    if not groups and any(labels):
-        divided_patient_ids_by_label_old(phenotype_list_file_name, phenotype_list_path, labels, label_values)
-        return
-    if not groups and not any(labels):
+    if not groups and not labels:
         groups = [{"sample_type.samples" :{"type": "string", "value": ["Primary Tumor"]}},
                   {"sample_type.samples": {"type": "string", "value": ["Metastatic"]}}]
+    elif not groups and any(labels):
+        divided_patient_ids_by_label_old(phenotype_list_file_name, phenotype_list_path, labels, label_values)
+        return
     phenotype_data_formatted = load_phenotype_data(phenotype_list_file_name, phenotype_list_path)
     headers = phenotype_data_formatted[0]
     phenotype_profiles = phenotype_data_formatted[1:]
@@ -151,7 +159,7 @@ def load_expression_profile_by_labelling(gene_list_file_name, gene_expression_fi
     patients_by_labeling = divided_patient_ids_by_label(phenotype_file_name, phenotype_path, label, label_values, groups)
 
     expression_profiles_by_labeling = []
-    for i in groups:
+    for i in patients_by_labeling:
         expression_profiles_by_labeling.append([])
     logger.info("about to split expression by primary tumor and metastatic")
 
