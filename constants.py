@@ -14,6 +14,12 @@ LABEL_ID = "sample_type.samples"
 PRIMARY_TUMOR = "Primary Tumor"
 METASTATIC = "Metastatic"
 
+LABELS_NORMAL = "labels_normal"
+LABELS_SHUFFLE = "labels_shuffle"
+LABELS_RANDOM = "labels_random"
+LABELS_ALTERNATED = "labels_alternated"
+LABELS_INVERTED = "labels_inverted"
+
 def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR="GDC-TCGA\\melanoma\\"):
     global BASE_PROFILE
     global CACHE_DIR

@@ -73,22 +73,26 @@ def svm_rbf_default(tuned_parameters):
 def svm_multiclass(tuned_parameters):
     return mord.LogisticAT(alpha=1.)
 
-def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank_method):
+def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank_method, labels_permutation):
 
     data_train = [[cur2 for cur2 in cur1] for cur1 in data_train]
     labels_train = [cur for i, cur in enumerate(labels_train)]
-    # alternated: labels_train = [i%2 for i, cur in enumerate(labels_train)]
-    # inverted: labels_train = [abs(cur - 1) for i, cur in enumerate(labels_train)]
-    # randomized: labels_train = [floor(random.random()/0.5) for i, cur in enumerate(labels_train)]
 
     data_test = [[cur2 for cur2 in cur1] for cur1 in data_test]
     labels_test = [cur for i, cur in enumerate(labels_test)]
-    # alternated: labels_test = [i%2 for i, cur in enumerate(labels_test)]
-    # inverted: labels_test = [abs(cur-1) for i, cur in enumerate(labels_test)]
-    # randomized: labels_test = [floor(random.random()/0.5) for i, cur in enumerate(labels_test)]
 
-    # shuffled: random.shuffle(labels_train)
-    # shuffled: random.shuffle(labels_test)
+    if labels_permutation == constants.LABELS_RANDOM:
+        labels_train = [math.floor(random.random() / 0.5) for i, cur in enumerate(labels_train)]
+        labels_test = [math.floor(random.random() / 0.5) for i, cur in enumerate(labels_test)]
+    if labels_permutation == constants.LABELS_SHUFFLE:
+        random.shuffle(labels_train)
+        random.shuffle(labels_test)
+    if labels_permutation == constants.LABELS_ALTERNATED:
+        labels_train = [i % 2 for i, cur in enumerate(labels_train)]
+        labels_test = [i % 2 for i, cur in enumerate(labels_test)]
+    if labels_permutation == constants.LABELS_INVERTED:
+        labels_train = [abs(cur - 1) for i, cur in enumerate(labels_train)]
+        labels_test = [abs(cur - 1) for i, cur in enumerate(labels_test)]
 
     data_train=np.array(data_train)
     labels_train=np.array(labels_train)
@@ -237,7 +241,7 @@ def print_svm_results(test_scores, rounds):
 
 
 # (3) main
-def prediction_by_gene_expression(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}):
+def prediction_by_gene_expression(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}, labels_permutation=constants.LABELS_NORMAL):
     thismodule = sys.modules[__name__]
     clf = getattr(thismodule, classification_method)(tuning_parameters)
     genelist_datasets = []
@@ -262,7 +266,7 @@ def prediction_by_gene_expression(tested_gene_file_names, expression_profile_fil
         for j, cur_dataset in enumerate(genelist_datasets):
             data_train, data_test, labels_train, labels_test = divide_train_and_test_groups(cur_dataset, labels)
 
-            test_pr, test_roc = apply_svm(clf, data_train, labels_train, data_test, labels_test, rank_method)
+            test_pr, test_roc = apply_svm(clf, data_train, labels_train, data_test, labels_test, rank_method, labels_permutation)
             test_pr_score[j].append(test_pr)
             test_roc_score[j].append(test_roc)
     print "#######################################"
@@ -270,28 +274,31 @@ def prediction_by_gene_expression(tested_gene_file_names, expression_profile_fil
     print_svm_results(test_pr_score, float(rounds))
     print "ROC"
     print_svm_results(test_roc_score, float(rounds))
-    print_to_excel(gene_sets_names=[cur.split('.')[0] for cur in tested_gene_file_names], gene_sets_sizes=gene_list_sizes, results=(test_pr_score, test_roc_score), ranking_method="LOGISTIC_REGRESSION")
+    print_to_excel(gene_sets_names=[cur.split('.')[0] for cur in tested_gene_file_names], gene_sets_sizes=gene_list_sizes, results=(test_pr_score, test_roc_score), rank_method="LOGISTIC_REGRESSION")
 
 
-def print_to_excel(gene_sets_names = ["a", "b", "c"], gene_sets_sizes = [1,1,1], results=None, ranking_method= "LOGISTIC_REGRESSION"):
+def print_to_excel(gene_sets_names, gene_sets_sizes, results=None, rank_method="LOGISTIC_REGRESSION"):
     wb = Workbook()#ffff00
     ws = wb.active
     yellowFill = PatternFill(start_color='00FFFF00',
                           end_color='00FFFF00',
                           fill_type='solid')
-    bd = Side(style='thin', color="000000")
-    border = Border(left=bd, top=bd, right=bd, bottom=bd)
+    bd_regular = Side(style='thin', color="000000")
+    border_regular = Border(left=bd_regular, top=bd_regular, right=bd_regular, bottom=bd_regular)
+
+    bd_bold = Side(style='thick', color="000000")
+    border_bold = Border(left=bd_bold, top=bd_bold, right=bd_bold, bottom=bd_bold)
 
     ws.column_dimensions["A"].width = 20
 
-    ws['A1'].border = border
+    ws['A1'].border = border_regular
     ws['A1'].fill = yellowFill
-    ws['B1'].border = border
+    ws['B1'].border = border_regular
     ws['B1'].fill = yellowFill
     for i in range(len(gene_sets_names)):
         ws.merge_cells('{}1:{}1'.format(chr(67+i*2), chr(67+i*2+1)))
-        ws['{}1'.format(chr(67+i*2))].border = border
-        ws['{}1'.format(chr(67 + i * 2+1))].border = border
+        ws['{}1'.format(chr(67+i*2))].border = border_regular
+        ws['{}1'.format(chr(67 + i * 2+1))].border = border_regular
         ws['{}1'.format(chr(67 + i * 2))].fill = yellowFill
         ws['{}1'.format(chr(67 + i * 2))] = gene_sets_names[i] + " (n={})".format(gene_sets_sizes[i])
         ws['{}1'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center', wrap_text=True)
@@ -305,51 +312,59 @@ def print_to_excel(gene_sets_names = ["a", "b", "c"], gene_sets_sizes = [1,1,1],
     blueLightFill = PatternFill(start_color='00E6F3FF',
                                  end_color='00E6F3FF',
                                  fill_type='solid')
-    border = Border(left=bd, top=bd, right=bd, bottom=bd)
-    ws['A2'].border = border
+    border_regular = Border(left=bd_regular, top=bd_regular, right=bd_regular, bottom=bd_regular)
+    ws['A2'].border = border_regular
     ws['A2'].fill = blueDarkFill
-    ws['B2'].border = border
+    ws['B2'].border = border_regular
     ws['B2'].fill = blueMediumFill
     for i in range(len(gene_sets_names)):
-        ws['{}2'.format(chr(67 + i * 2))].border = border
+        ws['{}2'.format(chr(67 + i * 2))].border = border_regular
         ws['{}2'.format(chr(67 + i * 2))].fill = blueMediumFill
         ws['{}2'.format(chr(67 + i * 2))] = "avg"
         ws['{}2'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center')
 
-        ws['{}2'.format(chr(67 + i * 2+1))].border = border
+        ws['{}2'.format(chr(67 + i * 2+1))].border = border_regular
         ws['{}2'.format(chr(67 + i * 2+1))].fill = blueMediumFill
         ws['{}2'.format(chr(67 + i * 2+1))] = "var"
         ws['{}2'.format(chr(67 + i * 2+1))].alignment = Alignment(horizontal='center')
 
-    ws['A3'].border = border
-    ws['A3'].fill = blueDarkFill
-    ws['A4'].border = border
-    ws['A4'].fill = blueDarkFill
     ws.merge_cells('A3:A4')
-    ws['A3'] = ranking_method
+    ws['A3'].border = border_regular
+    ws['A3'].fill = blueDarkFill
+    ws['A4'].border = border_regular
+    ws['A4'].fill = blueDarkFill
+    ws['A3'] = rank_method
     ws['A3'].alignment = Alignment(horizontal='center')
 
-    ws['B3'].border = border
+    ws['B3'].border = border_regular
     ws['B3'].fill = blueMediumFill
     ws['B3'] = "PR"
     ws['B3'].alignment = Alignment(horizontal='center')
-    ws['B4'].border = border
+    ws['B4'].border = border_regular
     ws['B4'].fill = blueMediumFill
     ws['B4'] = "ROC"
     ws['B4'].alignment = Alignment(horizontal='center')
 
     for k in range(len(list(results))):
         for i in range(len(gene_sets_names)):
-            ws['{}{}'.format(chr(67 + i * 2),3+k)].border = border
+            ws['{}{}'.format(chr(67 + i * 2),3+k)].border = border_regular
             ws['{}{}'.format(chr(67 + i * 2),3+k)].fill = blueLightFill
             ws['{}{}'.format(chr(67 + i * 2),3+k)] = sum(results[k][i])/ len(results[k][i])
             ws['{}{}'.format(chr(67 + i * 2),3+k)].alignment = Alignment(horizontal='center')
             ws['{}{}'.format(chr(67 + i * 2), 3 + k)].number_format = '0.000'
-            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].border = border
+            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].border = border_regular
             ws['{}{}'.format(chr(67 + i * 2+1),3+k)].fill = blueLightFill
             ws['{}{}'.format(chr(67 + i * 2+1),3+k)] = np.var((results[k][i]))
             ws['{}{}'.format(chr(67 + i * 2+1),3+k)].alignment = Alignment(horizontal='center')
             ws['{}{}'.format(chr(67 + i * 2+1), 3 + k)].number_format = '0.0000'
-    wb.save(os.path.join(constants.OUTPUT_DIR,"SVM_AUC-{}-{}.xlsx".format(ranking_method,time.time())))
+
+
+    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].border = border_bold
+    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].fill = yellowFill
+    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)] = "rounds = {}".format(len(results[k][i]))
+    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].alignment = Alignment(horizontal='center')
+    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].number_format = '0.0000'
+
+    wb.save(os.path.join(constants.OUTPUT_DIR,"SVM_AUC-{}-{}.xlsx".format(rank_method, time.time())))
 
 # print_to_excel()

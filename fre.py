@@ -132,8 +132,97 @@ def RFE(tested_gene_list_file_name, expression_profile_file_name, phenotype_file
             test_auROC_scores[j].append(test_auROC)
     print "#######################################"
     print "AUPR results:"
-    avgs, vars = print_fre_results(test_auPR_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
-    print avgs
+    pr_avgs, pr_vars = print_fre_results(test_auPR_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
     print "AUROC results:"
-    avgs, vars = print_fre_results(test_auROC_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
-    print avgs
+    roc_avgs, roc_vars = print_fre_results(test_auROC_scores, float(rounds), tested_gene_list_file_name, rank_method, permutation)
+    return (test_auPR_scores, test_auROC_scores)
+
+def print_to_excel(results, gene_sets_sizes,
+                   rank_method, permutation):
+    wb = Workbook()  # ffff00
+    ws = wb.active
+    yellowFill = PatternFill(start_color='00FFFF00',
+                             end_color='00FFFF00',
+                             fill_type='solid')
+    bd_regular = Side(style='thin', color="000000")
+    border_regular = Border(left=bd_regular, top=bd_regular, right=bd_regular, bottom=bd_regular)
+    bd_bold = Side(style='thick', color="000000")
+    border_bold = Border(left=bd_bold, top=bd_bold, right=bd_bold, bottom=bd_bold)
+
+    ws.column_dimensions["A"].width = 20
+
+    ws['A1'].border = border_regular
+    ws['A1'].fill = yellowFill
+    ws['A1'] = permutation
+    ws['B1'].border = border_regular
+    ws['B1'].fill = yellowFill
+    for i in range(len(gene_sets_sizes)):
+        ws.merge_cells('{}1:{}1'.format(chr(67 + i * 2), chr(67 + i * 2 + 1)))
+        ws['{}1'.format(chr(67 + i * 2))].border = border_regular
+        ws['{}1'.format(chr(67 + i * 2 + 1))].border = border_regular
+        ws['{}1'.format(chr(67 + i * 2))].fill = yellowFill
+        ws['{}1'.format(chr(67 + i * 2))] = " (n={})".format(gene_sets_sizes[i])
+        ws['{}1'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center', wrap_text=True)
+
+    blueDarkFill = PatternFill(start_color='006699FF',
+                               end_color='006699FF',
+                               fill_type='solid')
+    blueMediumFill = PatternFill(start_color='0099CCFF',
+                                 end_color='0099CCFF',
+                                 fill_type='solid')
+    blueLightFill = PatternFill(start_color='00E6F3FF',
+                                end_color='00E6F3FF',
+                                fill_type='solid')
+    border_regular = Border(left=bd_regular, top=bd_regular, right=bd_regular, bottom=bd_regular)
+    ws['A2'].border = border_regular
+    ws['A2'].fill = blueDarkFill
+    ws['B2'].border = border_regular
+    ws['B2'].fill = blueMediumFill
+    for i in range(len(gene_sets_sizes)):
+        ws['{}2'.format(chr(67 + i * 2))].border = border_regular
+        ws['{}2'.format(chr(67 + i * 2))].fill = blueMediumFill
+        ws['{}2'.format(chr(67 + i * 2))] = "avg"
+        ws['{}2'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center')
+
+        ws['{}2'.format(chr(67 + i * 2 + 1))].border = border_regular
+        ws['{}2'.format(chr(67 + i * 2 + 1))].fill = blueMediumFill
+        ws['{}2'.format(chr(67 + i * 2 + 1))] = "var"
+        ws['{}2'.format(chr(67 + i * 2 + 1))].alignment = Alignment(horizontal='center')
+
+    ws.merge_cells('A3:A4')
+    ws['A3'].border = border_regular
+    ws['A3'].fill = blueDarkFill
+    ws['A4'].border = border_regular
+    ws['A4'].fill = blueDarkFill
+    ws['A3'] = rank_method
+    ws['A3'].alignment = Alignment(horizontal='center')
+
+    ws['B3'].border = border_regular
+    ws['B3'].fill = blueMediumFill
+    ws['B3'] = "PR"
+    ws['B3'].alignment = Alignment(horizontal='center')
+    ws['B4'].border = border_regular
+    ws['B4'].fill = blueMediumFill
+    ws['B4'] = "ROC"
+    ws['B4'].alignment = Alignment(horizontal='center')
+
+    for i in range(len(results)):
+        for k in range(len(list(results[0]))):
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].border = border_regular
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].fill = blueLightFill
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)] = sum(results[i][k]) / len(results[i][k])
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].alignment = Alignment(horizontal='center')
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].number_format = '0.000'
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].border = border_regular
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].fill = blueLightFill
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)] = np.var((results[i][k]))
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].alignment = Alignment(horizontal='center')
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].number_format = '0.0000'
+
+
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].fill = yellowFill
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)] = "rounds = {}".format(len(results[i][k]))
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].alignment = Alignment(horizontal='center')
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].number_format = '0.0000'
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].border = border_bold
+    wb.save(os.path.join(constants.OUTPUT_DIR, "SVM_AUC-RFE-{}-{}-{}.xlsx".format(rank_method, permutation, time.time())))
