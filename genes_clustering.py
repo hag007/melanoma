@@ -32,8 +32,7 @@ from goatools.associations import read_ncbi_gene2go
 
 
 # () main
-def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, source="GDC-TCGA",dataset="melanoma", hgt_preprocessing_file_name = None, pval_preprocessing_file_name= None, N = None, B = None):
-    var_th_index = 2000
+def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, start_k=2, end_k=6):
     # fetch gene expression by gene_id, divided by tumor type
     gene_sets = []
     expression_sets = []
@@ -44,6 +43,8 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
 
     row_var = np.var(total_gene_expression,axis=1)
     row_var_sorted = np.sort(row_var)[::-1]
+    if var_th_index is not None:
+        var_th_index = len(row_var_sorted)
     row_var_th = row_var_sorted[var_th_index]
     row_var_masked_indices = np.where(row_var_th >= row_var)[0]
     gene_expression_top_var = np.delete(total_gene_expression, row_var_masked_indices, axis=0)
@@ -51,27 +52,17 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
 
     clfs_results = {}
     output_rows = []
-    go_obo_url = 'http://purl.obolibrary.org/obo/go/go-basic.obo'
-    if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR, 'go-basic.obo')):
-        wget.download(go_obo_url, os.path.join(constants.TCGA_DATA_DIR, 'go-basic.obo'))
+    if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME)):
+        wget.download(constants.GO_OBO_URL, os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
     # if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR, 'goa_human.gaf')):
     #     wget.download(go_obo_url, os.path.join(constants.TCGA_DATA_DIR, 'goa_human.gaf'))
-    obo_dag = GODag(os.path.join(constants.TCGA_DATA_DIR, "go-basic.obo"))
-    assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, "gene2go"), no_top=True)
+    obo_dag = GODag(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
+
+    assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, constants.ASSOICATION_FINE_NAME), no_top=True)
     g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_expression_headers_rows)],
                           assoc, obo_dag, methods=["bonferroni", "fdr_bh"])
-    # keyword = 'growth'
-    # arab_funcs = {}  # Initialise the dictionary of functions
-    # Iterate on each function using Bio.UniProt.GOA library.
-    # for entry in GOA.gafiterator(assoc):
-    #     uniprot_id = entry.pop('DB_Object_ID')
-    #     arab_funcs[uniprot_id] = entry
-    # growth_dict = {x: arab_funcs[x]
-    #                for x in arab_funcs
-    #                if keyword in arab_funcs[x]['DB_Object_Name']}
 
-
-    for n_clusters in range(2,7):
+    for n_clusters in range(start_k,end_k+1):
         clfs_results[n_clusters] = []
         km_clf = KMeans(n_clusters).fit(gene_expression_top_var)
         for i in range(n_clusters):
@@ -97,7 +88,6 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
                 go_ns = []
             output_rows.append((desc, "\r\n".join(gene_headers_row_cluster), url, "\r\n".join(go_ns),
                                 "\r\n".join(go_terms), "\r\n".join(go_names) , "\r\n".join(map(str, uncorrectd_pvals)), "\r\n".join(map(str, FDRs))))
-            x=1
 
     print_to_excel(output_rows=output_rows, gene_list_file_name=total_gene_list_file_name.split(".")[0],gene_expression_file_name=gene_expression_file_name.split(".")[0],var_th_index=var_th_index)
 

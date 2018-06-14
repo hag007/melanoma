@@ -23,7 +23,12 @@ LABELS_INVERTED = "labels_inverted"
 ENSEMBL_TO_GENE_SYMBOLS = "ensembl2gene_symbol.txt"
 ENSEMBL_TO_ENTREZ = "ensembl2entrez.txt"
 
+GO_OBO_URL = 'http://purl.obolibrary.org/obo/go/go-basic.obo'
+GO_FILE_NAME = 'go-basic.obo'
+ASSOICATION_FINE_NAME = "gene2go"
+
 def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR="GDC-TCGA\\melanoma\\"):
+
     global BASE_PROFILE
     global CACHE_DIR
     global OUTPUT_DIR

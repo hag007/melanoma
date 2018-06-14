@@ -144,7 +144,7 @@ from genes_clustering import *
 
 ##################### FEATURE SELECTION ################
 
-# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=50, feature_selection_method="rfe") #Primary Tumor , batches=100, epochs=20
+# feature_selection(["rfe1000.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe") #Primary Tumor , batches=100, epochs=20
 
 # prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100, label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]])
 
@@ -168,21 +168,21 @@ from genes_clustering import *
 # find_sets_correlations(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "ldha.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
 #                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
 
-# for i in range(5):
-#     find_clusters_and_go_enrichment(total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
+for i in range(1):
+    find_clusters_and_go_enrichment(total_gene_list_file_name="rfe1000.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv", var_th_index=None, start_k=2, end_k=3)
 
 
 
-dataset = "SKCM"
-data_normalizaton = "counts"
-gene_expression_file_name, phenotype_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-
-gene_list_file_names = ["warburg.txt", "warburg_high.txt", "warburg_low.txt", "mito_warburg.txt", "mito.txt", "test.txt", "test_2.txt"]
-gene_filter_file_name = "protein_coding.txt"
-rounds=100
-rank_method = DISTANCE
-results = []
-prediction_by_gene_expression(gene_list_file_names=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, rounds=rounds, rank_method=rank_method, labels_permutation=constants.LABELS_NORMAL, compare_to_random = True)
+# dataset = "SKCM"
+# data_normalizaton = "counts"
+# gene_expression_file_name, phenotype_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+#
+# gene_list_file_names = ["warburg.txt", "warburg_high.txt", "warburg_low.txt", "mito_warburg.txt", "mito.txt", "test.txt", "test_2.txt"]
+# gene_filter_file_name = "protein_coding.txt"
+# rounds=100
+# rank_method = DISTANCE
+# results = []
+# prediction_by_gene_expression(gene_list_file_names=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, rounds=rounds, rank_method=rank_method, labels_permutation=constants.LABELS_NORMAL, compare_to_random = True)
 
 
 
