@@ -43,7 +43,7 @@ import fre
 from fre import *
 from feature_selection import *
 from utils.param_builder import *
-
+from genes_clustering import *
 
 # (1) similarity caller:
 # find_expression_similarity_profile(gene_list_file_name="oxidative.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotpe_file_name="TCGA-SKCM.GDC_phenotype.tsv")
@@ -108,20 +108,21 @@ from utils.param_builder import *
 # RFE("protein_coding.txt", "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv",rank_method = LOGISTIC_REGRESSION, rounds=2, recursion_step_size=3, recursion_number_of_steps=200, pval_preprocessing_file_name = "pvals_protein_coding.txt", permutation=REVERSED)
 
 ## randomized by size
-dataset = "SKCM"
-data_normalizaton = "counts"
-gene_expression_file_name, phenotype_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-
-gene_list_file_name = "protein_coding.txt"
-rounds=1
-rank_method = DISTANCE
-recursion_number_of_steps=1
-permutation=RANDOMIZED
-gene_sets_sizes = [13, 50]
-results = []
-for cur_size in gene_sets_sizes:
-    results.append(RFE(gene_list_file_name, gene_expression_file_name, phenotype_file_name, rank_method = rank_method, rounds=rounds, recursion_step_size=cur_size, recursion_number_of_steps=recursion_number_of_steps, pval_preprocessing_file_name = pval_preprocessing_file_name, permutation=permutation))
-fre.print_to_excel(results=results, gene_sets_sizes=gene_sets_sizes,rank_method = rank_method, permutation=permutation)
+# dataset = "SKCM"
+# data_normalizaton = "counts"
+# gene_expression_file_name, phenotype_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+#
+# gene_list_file_name = "protein_coding.txt"
+# rounds=100
+# rank_method = DISTANCE
+# recursion_number_of_steps=1
+# permutation=RANDOMIZED
+# gene_sets_sizes = [13, 6, 7, 13]
+# results = []
+# for i in range(5):
+#     for cur_size in gene_sets_sizes:
+#         results.append(RFE(gene_list_file_name, gene_expression_file_name, phenotype_file_name, rank_method = rank_method, rounds=rounds, recursion_step_size=cur_size, recursion_number_of_steps=recursion_number_of_steps, pval_preprocessing_file_name = pval_preprocessing_file_name, permutation=permutation))
+#     fre.print_to_excel(results=results, gene_sets_sizes=gene_sets_sizes,rank_method = rank_method, permutation=permutation)
 
 ##################### BRCA ########################
 # update_dirs(DATASET_DIR="TCGA\\breast\\")
@@ -143,8 +144,8 @@ fre.print_to_excel(results=results, gene_sets_sizes=gene_sets_sizes,rank_method 
 
 ##################### FEATURE SELECTION ################
 
-# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe", label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]]) #Primary Tumor , batches=100, epochs=20
-# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=DISTANCE, gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe", label=["sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]]) #Primary Tumor , batches=100, epochs=20
+# feature_selection(["protein_coding_long.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=50, feature_selection_method="rfe") #Primary Tumor , batches=100, epochs=20
+
 # prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100, label=["therapy_type","sample_type.samples"], label_values=[["Targeted Molecular therapy","Metastatic"],["Chemotherapy","Metastatic"]])
 
 # prediction_by_gene_expression(["mito.txt"], "TCGA-SKCM.htseq_fpkm.tsv", "TCGA-SKCM.GDC_phenotype.tsv", rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=100,
@@ -167,20 +168,21 @@ fre.print_to_excel(results=results, gene_sets_sizes=gene_sets_sizes,rank_method 
 # find_sets_correlations(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "ldha.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
 #                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
 
+# for i in range(5):
+#     find_clusters_and_go_enrichment(total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
+
+
 
 dataset = "SKCM"
 data_normalizaton = "counts"
 gene_expression_file_name, phenotype_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
 
-gene_list_file_name = "protein_coding.txt"
+gene_list_file_names = ["warburg.txt", "warburg_high.txt", "warburg_low.txt", "mito_warburg.txt", "mito.txt", "test.txt", "test_2.txt"]
 gene_filter_file_name = "protein_coding.txt"
-rounds=1
+rounds=100
 rank_method = DISTANCE
-recursion_number_of_steps=1
-permutation=RANDOMIZED
-gene_set_sizes = [13,120,420,750]
 results = []
-prediction_by_gene_expression(["mito.txt", "oxidative.txt"], gene_expression_file_name, phenotype_file_name, rank_method=rank_method, gene_filter_file_name=gene_filter_file_name, rounds=rounds, labels_permutation=constants.LABELS_NORMAL)
+prediction_by_gene_expression(gene_list_file_names=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, rounds=rounds, rank_method=rank_method, labels_permutation=constants.LABELS_NORMAL, compare_to_random = True)
 
 
 

@@ -210,18 +210,18 @@ def print_to_excel(results, gene_sets_sizes,
         for k in range(len(list(results[0]))):
             ws['{}{}'.format(chr(67 + i * 2), 3 + k)].border = border_regular
             ws['{}{}'.format(chr(67 + i * 2), 3 + k)].fill = blueLightFill
-            ws['{}{}'.format(chr(67 + i * 2), 3 + k)] = sum(results[i][k]) / len(results[i][k])
+            ws['{}{}'.format(chr(67 + i * 2), 3 + k)] = sum(results[i][k][0]) / len(results[i][k][0])
             ws['{}{}'.format(chr(67 + i * 2), 3 + k)].alignment = Alignment(horizontal='center')
             ws['{}{}'.format(chr(67 + i * 2), 3 + k)].number_format = '0.000'
             ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].border = border_regular
             ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].fill = blueLightFill
-            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)] = np.var((results[i][k]))
+            ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)] = np.var((results[i][k][0]))
             ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].alignment = Alignment(horizontal='center')
             ws['{}{}'.format(chr(67 + i * 2 + 1), 3 + k)].number_format = '0.0000'
 
 
     ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].fill = yellowFill
-    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)] = "rounds = {}".format(len(results[i][k]))
+    ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)] = "rounds = {}".format(len(results[i][k][0]))
     ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].alignment = Alignment(horizontal='center')
     ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].number_format = '0.0000'
     ws['{}{}'.format(chr(67 + i * 2 + 3), 5 + k)].border = border_bold

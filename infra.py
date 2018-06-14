@@ -60,7 +60,6 @@ def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name,
         expression_profiles_filtered = np.flip(np.rot90(expression_profiles_filtered, k=1, axes=(1,0)),1)
         print stopwatch.stop("done rotate gene expression")
 
-    expression_profiles_filtered
     return expression_profiles_filtered
 
 

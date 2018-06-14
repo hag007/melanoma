@@ -20,6 +20,9 @@ LABELS_RANDOM = "labels_random"
 LABELS_ALTERNATED = "labels_alternated"
 LABELS_INVERTED = "labels_inverted"
 
+ENSEMBL_TO_GENE_SYMBOLS = "ensembl2gene_symbol.txt"
+ENSEMBL_TO_ENTREZ = "ensembl2entrez.txt"
+
 def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR="GDC-TCGA\\melanoma\\"):
     global BASE_PROFILE
     global CACHE_DIR

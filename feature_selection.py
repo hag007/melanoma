@@ -2,6 +2,8 @@ from ctypes import c_bool
 
 print(__doc__)
 import sys
+import constants
+import time
 from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold
 from sklearn.feature_selection import RFECV
@@ -12,12 +14,17 @@ from sklearn.feature_selection import SelectPercentile, f_classif
 from scipy.stats import hypergeom
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 from sklearn.datasets import load_boston
 from sklearn.feature_selection import SelectFromModel
 from sklearn.linear_model import LassoCV
-
-from svm import *
+from infra import *
+import random
+import svm as my_svm
+import openpyxl
+from utils.ensembl2gene_symbol import get_e2g_dictionary
+from openpyxl import Workbook
+from openpyxl.styles import Color, PatternFill, Font, Border, Side, Alignment
 
 def univariate_feature_selection():
     # #############################################################################
@@ -77,10 +84,10 @@ def univariate_feature_selection():
     plt.legend(loc='upper right')
     plt.show()
 
-def load_data(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2):
+def load_data(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None):
     genelist_datasets = []
     for tested_gene_file_name in tested_gene_file_names:
-        data, labels, _1, _2, gene_ids = load_svm_data(tested_gene_file_name, expression_profile_file_name,
+        data, labels, _0, gene_ids = my_svm.load_svm_data(tested_gene_file_name, expression_profile_file_name,
                                                  phenotype_file_name, label, label_values,
                                                  gene_filter_file_name)
         genelist_datasets.append(data)
@@ -179,9 +186,13 @@ def tree_feature_selection():
     plt.ylim([np.min(feature2), np.max(feature2)])
     plt.show()
 
-def feature_selection(tested_gene_list_file_names, expression_profile_file_name, phenotype_file_name, label=constants.LABEL_ID, label_values=[constants.PRIMARY_TUMOR, constants.METASTATIC] , rank_method=LOGISTIC_REGRESSION, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=2, start_index = 0, recursion_number_of_steps=20, pval_preprocessing_file_name = None, permutation=fre.NORMAL, feature_selection_method = "rfe", score_method="average_precision", target_genes_subset = None, batches=1, epochs = 1):
+def feature_selection(gene_list_file_name, gene_expression_file_name, phenotype_file_name, groups=None, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=20, start_index = 0, recursion_number_of_steps=1, feature_selection_method ="rfe", score_method="average_precision", target_genes_subset = None, batches=None, epochs = None):
 
-    genelist_datasets, labels, gene_ids = load_data(tested_gene_list_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2)
+    genelist_datasets, labels, gene_ids = load_data(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None)
+    if epochs is None:
+        epochs=1
+        batches= len(gene_ids)
+
 
     thismodule = sys.modules[__name__]
     fsm = getattr(thismodule, feature_selection_method)
@@ -192,14 +203,16 @@ def feature_selection(tested_gene_list_file_names, expression_profile_file_name,
     for i, genelist_dataset in enumerate(genelist_datasets):
         for epoch_iteration in range(epochs):
             batch_gene_ids, batch_genelist_dataset = create_batch(genelist_dataset, gene_ids, batches, genes_subset)
-            n_features, ranking = fsm(batch_genelist_dataset, labels, tested_gene_list_file_names[i], tuned_parameters, recursion_step_size=recursion_step_size, start_index = 0, recursion_number_of_steps=20, epoch_iteration=epoch_iteration)
+            n_features, ranking = fsm(batch_genelist_dataset, labels, gene_list_file_name[i], tuned_parameters, recursion_step_size=recursion_step_size, start_index = 0, recursion_number_of_steps=20, epoch_iteration=epoch_iteration, score_method=score_method)
             sorted_features = sorted(zip(batch_gene_ids, ranking), key = lambda x: x[1])
             features_ranked = zip(*sorted_features)[0]
+            print "total ranking: \n{}".format("\n".join(features_ranked))
             if genes_subset:
                 genes_subset_ranking = [(j,feature) for feature, j in sorted_features if feature in genes_subset]
                 print genes_subset_ranking
                 calc_HG_test(genelist_dataset, genes_subset_ranking, ranking)
 
+        print_to_excel(sorted_features=sorted_features, gene_list_file_name=gene_list_file_name[i], feature_selection_method=feature_selection_method, epochs=epochs, batches=batches, recursion_step_size=recursion_step_size)
 
 def calc_HG_test(genelist_dataset, genes_subset_ranking, ranking, th=1):
     b = len(list(filter(lambda x: x[0] == th, genes_subset_ranking)))
@@ -231,3 +244,75 @@ def create_batch(genelist_dataset, gene_ids, batches, target_genes_subset):
     genelist_dataset_filtered = genelist_dataset_filtered + genelist_dataset[:batches-index]
     genelist_dataset_filtered = np.flip(np.rot90(genelist_dataset_filtered, k=1, axes=(1, 0)), 1)
     return gene_ids_filtered, genelist_dataset_filtered
+
+
+def print_to_excel(sorted_features, gene_list_file_name, feature_selection_method, epochs, batches, recursion_step_size):
+    wb = Workbook()  # ffff00
+    ws = wb.active
+    yellowFill = PatternFill(start_color='00FFFF00',
+                             end_color='00FFFF00',
+                             fill_type='solid')
+    bd_regular = Side(style='thin', color="000000")
+    border_regular = Border(left=bd_regular, top=bd_regular, right=bd_regular, bottom=bd_regular)
+
+    bd_bold = Side(style='thick', color="000000")
+    border_bold = Border(left=bd_bold, top=bd_bold, right=bd_bold, bottom=bd_bold)
+
+    blueDarkFill = PatternFill(start_color='006699FF',
+                             end_color='006699FF',
+                             fill_type='solid')
+    blueMediumFill = PatternFill(start_color='0099CCFF',
+                               end_color='0099CCFF',
+                               fill_type='solid')
+    blueLightFill = PatternFill(start_color='00E6F3FF',
+                                 end_color='00E6F3FF',
+                                 fill_type='solid')
+    gene_symbols_dictionary = get_e2g_dictionary()
+
+    ws['A1'].border = border_regular
+    ws['A1'].fill = yellowFill
+    ws['A1'] = "index"
+    ws['B1'].border = border_regular
+    ws['B1'].fill = yellowFill
+    ws['B1'] = "ensembl id"
+    ws.column_dimensions["B"].width = 20
+    ws['C1'].border = border_regular
+    ws['C1'].fill = yellowFill
+    ws['C1'] = "gene symbol"
+    ws['D1'].border = border_regular
+    ws['D1'].fill = yellowFill
+    ws['D1'] = "rank"
+
+    ws['F1'].border = border_bold
+    ws['F1'].fill = yellowFill
+    ws['F1'] = "{} features chosen out of {}".format(len(list(filter(lambda x: x[1] == 1, sorted_features))), len(sorted_features))
+
+    ws['F2'].border = border_bold
+    ws['F2'].fill = yellowFill
+    ws['F2'] = "step size = {}".format(recursion_step_size)
+
+    ws.column_dimensions["F"].width = 30
+
+    for i, feature in enumerate(sorted_features):
+
+        ws['A{}'.format(i+2)].border = border_regular
+        ws['A{}'.format(i+2)].fill = blueLightFill
+        ws['A{}'.format(i+2)] = str(i+1)
+        ws['A{}'.format(i+2)].alignment = Alignment(horizontal='center', wrap_text=True)
+
+        ws['B{}'.format(i+2)].border = border_regular
+        ws['B{}'.format(i+2)].fill = blueLightFill
+        ws['B{}'.format(i+2)] = feature[0]
+        ws['B{}'.format(i+2)].alignment = Alignment(horizontal='center', wrap_text=True)
+
+        ws['C{}'.format(i + 2)].border = border_regular
+        ws['C{}'.format(i + 2)].fill = blueLightFill
+        ws['C{}'.format(i + 2)] = gene_symbols_dictionary[feature[0].split(".")[0]]
+        ws['C{}'.format(i + 2)].alignment = Alignment(horizontal='center', wrap_text=True)
+
+        ws['D{}'.format(i+2)].border = border_regular
+        ws['D{}'.format(i+2)].fill = blueLightFill
+        ws['D{}'.format(i+2)] = feature[1]
+        ws['D{}'.format(i+2)].alignment = Alignment(horizontal='center', wrap_text=True)
+
+    wb.save(os.path.join(constants.OUTPUT_DIR,"FEATURE-SELECTION-{}-{}-{}-{}-{}.xlsx".format(gene_list_file_name.split(".")[0], feature_selection_method, epochs, batches, time.time())))

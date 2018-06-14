@@ -20,6 +20,7 @@ from sklearn.metrics import roc_curve
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.styles import Color, PatternFill, Font, Border, Side, Alignment
+from utils.groups_generator import *
 
 DISTANCE = "distance"
 LOGISTIC_REGRESSION = "logistic_regression"
@@ -73,7 +74,7 @@ def svm_rbf_default(tuned_parameters):
 def svm_multiclass(tuned_parameters):
     return mord.LogisticAT(alpha=1.)
 
-def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank_method, labels_permutation):
+def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank_method, labels_permutation=LABELS_NORMAL):
 
     data_train = [[cur2 for cur2 in cur1] for cur1 in data_train]
     labels_train = [cur for i, cur in enumerate(labels_train)]
@@ -241,16 +242,26 @@ def print_svm_results(test_scores, rounds):
 
 
 # (3) main
-def prediction_by_gene_expression(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}, labels_permutation=constants.LABELS_NORMAL):
+def prediction_by_gene_expression(gene_list_file_names, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, rank_method=LOGISTIC_REGRESSION, gene_filter_file_name=None, rounds=2, groups=None, classification_method="svm_rbf_default", tuning_parameters={'C': [10], 'kernel': ['rbf']}, labels_permutation=constants.LABELS_NORMAL, compare_to_random=True):
     thismodule = sys.modules[__name__]
     clf = getattr(thismodule, classification_method)(tuning_parameters)
     genelist_datasets = []
     gene_list_sizes = []
-    for tested_gene_file_name in tested_gene_file_names:
-        data, labels , _1, _2 = load_svm_data(tested_gene_file_name, expression_profile_file_name, phenotype_file_name, label, label_values,
-                                     gene_filter_file_name, groups)
+    for tested_gene_file_name in gene_list_file_names:
+        data, labels , _1, _2 = load_svm_data(tested_gene_file_name, gene_expression_file_name, phenotype_file_name, label, label_values,
+                                              gene_filter_file_name, groups)
         genelist_datasets.append(data)
         gene_list_sizes.append(np.shape(data)[1])
+
+    if compare_to_random:
+        for cur_size in list(gene_list_sizes):
+            random_set_file_name = generate_random_set(random_size = cur_size, meta_gene_set="protein_coding_long.txt")
+            data, labels, _1, _2 = load_svm_data(random_set_file_name, gene_expression_file_name, phenotype_file_name,
+                                                 label, label_values,
+                                                 gene_filter_file_name, groups)
+            genelist_datasets.append(data)
+            gene_list_sizes.append(np.shape(data)[1])
+            gene_list_file_names.append(random_set_file_name)
 
     train_scores = []
     test_pr_score = []
@@ -274,7 +285,7 @@ def prediction_by_gene_expression(tested_gene_file_names, expression_profile_fil
     print_svm_results(test_pr_score, float(rounds))
     print "ROC"
     print_svm_results(test_roc_score, float(rounds))
-    print_to_excel(gene_sets_names=[cur.split('.')[0] for cur in tested_gene_file_names], gene_sets_sizes=gene_list_sizes, results=(test_pr_score, test_roc_score), rank_method="LOGISTIC_REGRESSION")
+    print_to_excel(gene_sets_names=[cur.split('.')[0] for cur in gene_list_file_names], gene_sets_sizes=gene_list_sizes, results=(test_pr_score, test_roc_score), rank_method=rank_method)
 
 
 def print_to_excel(gene_sets_names, gene_sets_sizes, results=None, rank_method="LOGISTIC_REGRESSION"):
@@ -295,13 +306,17 @@ def print_to_excel(gene_sets_names, gene_sets_sizes, results=None, rank_method="
     ws['A1'].fill = yellowFill
     ws['B1'].border = border_regular
     ws['B1'].fill = yellowFill
-    for i in range(len(gene_sets_names)):
-        ws.merge_cells('{}1:{}1'.format(chr(67+i*2), chr(67+i*2+1)))
-        ws['{}1'.format(chr(67+i*2))].border = border_regular
-        ws['{}1'.format(chr(67 + i * 2+1))].border = border_regular
-        ws['{}1'.format(chr(67 + i * 2))].fill = yellowFill
-        ws['{}1'.format(chr(67 + i * 2))] = gene_sets_names[i] + " (n={})".format(gene_sets_sizes[i])
-        ws['{}1'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center', wrap_text=True)
+    for i in range(1,len(gene_sets_names)+1):
+        if (65+i*2) > 90:
+            prefix = "A"
+        else:
+            prefix = ""
+        ws.merge_cells('{}{}1:{}{}1'.format(prefix,chr(65+(i*2)%26),prefix,chr(65+(i*2+1)%26)))
+        ws['{}{}1'.format(prefix,chr(65+(i*2)%26))].border = border_regular
+        ws['{}{}1'.format(prefix,chr(65+(i*2+1)%26))].border = border_regular
+        ws['{}{}1'.format(prefix,chr(65+(i*2)%26))].fill = yellowFill
+        ws['{}{}1'.format(prefix,chr(65+(i*2)%26))] = gene_sets_names[i-1] + " (n={})".format(gene_sets_sizes[i-1])
+        ws['{}{}1'.format(prefix,chr(65+(i*2)%26))].alignment = Alignment(horizontal='center', wrap_text=True)
 
     blueDarkFill = PatternFill(start_color='006699FF',
                              end_color='006699FF',
@@ -317,16 +332,20 @@ def print_to_excel(gene_sets_names, gene_sets_sizes, results=None, rank_method="
     ws['A2'].fill = blueDarkFill
     ws['B2'].border = border_regular
     ws['B2'].fill = blueMediumFill
-    for i in range(len(gene_sets_names)):
-        ws['{}2'.format(chr(67 + i * 2))].border = border_regular
-        ws['{}2'.format(chr(67 + i * 2))].fill = blueMediumFill
-        ws['{}2'.format(chr(67 + i * 2))] = "avg"
-        ws['{}2'.format(chr(67 + i * 2))].alignment = Alignment(horizontal='center')
+    for i in range(1,len(gene_sets_names)+1):
+        if (65+i*2) > 90:
+            prefix = "A"
+        else:
+            prefix = ""
+        ws['{}{}2'.format(prefix,chr(65+(i*2)%26))].border = border_regular
+        ws['{}{}2'.format(prefix,chr(65+(i*2)%26))].fill = blueMediumFill
+        ws['{}{}2'.format(prefix,chr(65+(i*2)%26))] = "avg"
+        ws['{}{}2'.format(prefix,chr(65+(i*2)%26))].alignment = Alignment(horizontal='center')
 
-        ws['{}2'.format(chr(67 + i * 2+1))].border = border_regular
-        ws['{}2'.format(chr(67 + i * 2+1))].fill = blueMediumFill
-        ws['{}2'.format(chr(67 + i * 2+1))] = "var"
-        ws['{}2'.format(chr(67 + i * 2+1))].alignment = Alignment(horizontal='center')
+        ws['{}{}2'.format(prefix,chr(65+(i*2+1)%26))].border = border_regular
+        ws['{}{}2'.format(prefix,chr(65+(i*2+1)%26))].fill = blueMediumFill
+        ws['{}{}2'.format(prefix,chr(65+(i*2+1)%26))] = "var"
+        ws['{}{}2'.format(prefix,chr(65+(i*2+1)%26))].alignment = Alignment(horizontal='center')
 
     ws.merge_cells('A3:A4')
     ws['A3'].border = border_regular
@@ -346,24 +365,28 @@ def print_to_excel(gene_sets_names, gene_sets_sizes, results=None, rank_method="
     ws['B4'].alignment = Alignment(horizontal='center')
 
     for k in range(len(list(results))):
-        for i in range(len(gene_sets_names)):
-            ws['{}{}'.format(chr(67 + i * 2),3+k)].border = border_regular
-            ws['{}{}'.format(chr(67 + i * 2),3+k)].fill = blueLightFill
-            ws['{}{}'.format(chr(67 + i * 2),3+k)] = sum(results[k][i])/ len(results[k][i])
-            ws['{}{}'.format(chr(67 + i * 2),3+k)].alignment = Alignment(horizontal='center')
-            ws['{}{}'.format(chr(67 + i * 2), 3 + k)].number_format = '0.000'
-            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].border = border_regular
-            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].fill = blueLightFill
-            ws['{}{}'.format(chr(67 + i * 2+1),3+k)] = np.var((results[k][i]))
-            ws['{}{}'.format(chr(67 + i * 2+1),3+k)].alignment = Alignment(horizontal='center')
-            ws['{}{}'.format(chr(67 + i * 2+1), 3 + k)].number_format = '0.0000'
+        for i in range(1,len(gene_sets_names)+1):
+            if (65 + i * 2) > 90:
+                prefix = "A"
+            else:
+                prefix = ""
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26),3+k)].border = border_regular
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26),3+k)].fill = blueLightFill
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26),3+k)] = sum(results[k][i-1])/ len(results[k][i-1])
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26),3+k)].alignment = Alignment(horizontal='center')
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26), 3 + k)].number_format = '0.000'
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+1),3+k)].border = border_regular
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+1),3+k)].fill = blueLightFill
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+1),3+k)] = np.var((results[k][i-1]))
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+1),3+k)].alignment = Alignment(horizontal='center')
+            ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+1), 3 + k)].number_format = '0.0000'
 
 
-    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].border = border_bold
-    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].fill = yellowFill
-    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)] = "rounds = {}".format(len(results[k][i]))
-    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].alignment = Alignment(horizontal='center')
-    ws['{}{}'.format(chr(67 + i * 2 + 2), 4 + k)].number_format = '0.0000'
+    ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+2), 4 + k)].border = border_bold
+    ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+2), 4 + k)].fill = yellowFill
+    ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+2), 4 + k)] = "rounds = {}".format(len(results[k][i-1]))
+    ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+2), 4 + k)].alignment = Alignment(horizontal='center')
+    ws['{}{}{}'.format(prefix,chr(65+(i*2)%26+2), 4 + k)].number_format = '0.0000'
 
     wb.save(os.path.join(constants.OUTPUT_DIR,"SVM_AUC-{}-{}.xlsx".format(rank_method, time.time())))
 

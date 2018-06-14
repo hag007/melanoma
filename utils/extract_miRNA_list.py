@@ -1,4 +1,4 @@
-from ensembl2gene_symbol import get_dictionary
+from ensembl2gene_symbol import get_g2e_dictionary
 from matplotlib import style
 import os
 style.use("ggplot")
@@ -43,7 +43,7 @@ origin_lists = ["tami_metabolism.txt", "tami_mito.txt", "tami_extra.txt"]
 for origin_list in origin_lists:
     print "fetch mrna keys from {}".format(origin_list)
     mRNA_list = load_gene_list(origin_list)
-    gene_symbols2ensembl = get_dictionary()
+    gene_symbols2ensembl = get_g2e_dictionary()
     mirna_clusters = load_mirna_clusters("mir_cluster_out.txt")
     ensembl_ids = []
 
