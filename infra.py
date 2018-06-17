@@ -107,6 +107,7 @@ def divided_patient_ids_by_label(phenotype_list_file_name, phenotype_list_path=N
             dup=0
             is_hold_constraits = True
             for k,v in cur_group.iteritems():
+                if len(pp) <= headers.index(k): continue
                 if v['type'] == "string":
                     if not any([pp[headers.index(k)] == cur for cur in v["value"]]):
                         is_hold_constraits = False

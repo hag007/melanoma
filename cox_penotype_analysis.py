@@ -15,9 +15,9 @@ pheno_start = 1
 pheno_limit = 135
 
 
-def main(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows):
-    phenotype_dataset = load_phenotype_data(phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv", phenotype_list_path=None)
-    survival_dataset = load_survival_data("TCGA-SKCM.survival.tsv", survival_list_path=None)
+def cox_phenotype(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows, phenotype_file_name, survival_file_name):
+    phenotype_dataset = load_phenotype_data(phenotype_file_name=phenotype_file_name, phenotype_list_path=None)
+    survival_dataset = load_survival_data(survival_file_name, survival_list_path=None)
     pheno_survival_integrated = {}
     for cur_pheno in phenotype_dataset[1:]:
         pheno_survival_integrated[cur_pheno[0]] = cur_pheno[pheno_start:pheno_limit]
@@ -153,12 +153,3 @@ def decode_categorical_values(df):
     df.replace('TX', np.nan, inplace=True)
     ### end of encode ###
 
-
-test_independently = False
-filtered_out = ['bcr', 'days_to_initial_pathologic_diagnosis', 'disease_code', 'informed_consent_verified', 'project_code', 'withdrawn', 'year_of_dcc_upload', "therapy_type_notes", "pathology_report_file_name", "tx_on_clinical_trial", "units", "year_of_form_completion", "vial_number", "ethnicity.demographic", "is_ffpe.samples", "project.tissue_source_site", "name.tissue_source_site","bcr_id.tissue_source_site", "project_id.project", "submitter_id", "therapy_type", "therapy_type_notes", 'classification_of_tumor.diagnoses', 'last_known_disease_status.diagnoses', 'prior_malignancy.diagnoses', 'progression_or_recurrence.diagnoses', 'tumor_grade.diagnoses', 'disease_type', 'primary_site', 'disease_type.project', 'name.project', 'primary_site.project', "vital_status.diagnoses", "day_of_dcc_upload", "month_of_dcc_upload", "tissue_retrospective_collection_indicator", "tissue_prospective_collection_indicator", "code.tissue_source_site", "tissue_source_site", "site_of_resection_or_biopsy.diagnoses", "disease_type", "primary_site", "disease_type.project", "name.project", "primary_site.project", "project_id.project", "submitter_id", "bcr_id.tissue_source_site", "code.tissue_source_site", "name.tissue_source_site", "project.tissue_source_site", "is_ffpe.samples", "oct_embedded.samples", "sample_type_id.samples", "state.samples", "system_version",  "age_at_diagnosis.diagnoses", "day_of_form_completion", "patient_id", "batch_number"]
-filtered_in = ["sample_type.samples", 'gender.demographic', "pathologic_M","pathologic_T","pathologic_N", "tumor_stage.diagnoses", "melanoma_clark_level_value", "days_to_birth.diagnoses" ,"weight.exposures","height.exposures", "person_neoplasm_cancer_status"]
-#["melanoma_clark_level_value", "_OS", "_OS_IND"]
-filter_type = FILTER_IN
-filter_na_by_rows = True
-f = file("output", 'w+')
-main(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows)

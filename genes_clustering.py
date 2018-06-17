@@ -32,23 +32,22 @@ from goatools.associations import read_ncbi_gene2go
 
 
 # () main
-def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, start_k=2, end_k=6):
+def find_clusters_and_go_enrichment(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, start_k=2, end_k=6):
     # fetch gene expression by gene_id, divided by tumor type
     gene_sets = []
     expression_sets = []
     averaged_expression_sets = []
-    total_gene_expression = load_gene_expression_profile_by_genes(total_gene_list_file_name, gene_expression_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path)
-
-    total_gene_expression_headers_rows, total_gene_expression_headers_columns, total_gene_expression = separate_headers(total_gene_expression)
-
-    row_var = np.var(total_gene_expression,axis=1)
+    tested_gene_expression = load_gene_expression_profile_by_genes(tested_gene_list_file_name, gene_expression_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path)
+    tested_gene_expression_headers_rows, tested_gene_expression_headers_columns, tested_gene_expression = separate_headers(tested_gene_expression)
+    total_gene_list = load_gene_list(total_gene_list_file_name)
+    row_var = np.var(tested_gene_expression,axis=1)
     row_var_sorted = np.sort(row_var)[::-1]
     if var_th_index is not None:
         var_th_index = len(row_var_sorted)
     row_var_th = row_var_sorted[var_th_index]
     row_var_masked_indices = np.where(row_var_th >= row_var)[0]
-    gene_expression_top_var = np.delete(total_gene_expression, row_var_masked_indices, axis=0)
-    gene_expression_top_var_headers_rows = np.delete(total_gene_expression_headers_rows, row_var_masked_indices, axis=0)
+    gene_expression_top_var = np.delete(tested_gene_expression, row_var_masked_indices, axis=0)
+    gene_expression_top_var_headers_rows = np.delete(tested_gene_expression_headers_rows, row_var_masked_indices, axis=0)
 
     clfs_results = {}
     output_rows = []
@@ -59,8 +58,12 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
     obo_dag = GODag(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
 
     assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, constants.ASSOICATION_FINE_NAME), no_top=True)
-    g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_expression_headers_rows)],
+    g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_list)],
                           assoc, obo_dag, methods=["bonferroni", "fdr_bh"])
+    g_res = g.run_study([int(cur) for cur in ensembl2entrez_convertor(gene_expression_top_var_headers_rows)])
+    GO_results = [(cur.NS, cur.GO, cur.goterm.name, cur.p_uncorrected, cur.p_fdr_bh) for cur in g_res if
+                  cur.p_fdr_bh <= 0.05]
+    print GO_results
 
     for n_clusters in range(start_k,end_k+1):
         clfs_results[n_clusters] = []
@@ -73,7 +76,6 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
             desc = "k={} clustering cluster {} has {} genes".format(n_clusters, i, len(gene_expression_cluster))
             gene_list = ",".join(gene_headers_row_cluster)
             url = check_enrichment(gene_list)
-
 
             g_res = g.run_study([int(cur) for cur in ensembl2entrez_convertor(gene_headers_row_cluster)])
             GO_results = [(cur.NS, cur.GO, cur.goterm.name, cur.p_uncorrected, cur.p_fdr_bh ) for cur in g_res if cur.p_fdr_bh <= 0.05]
@@ -89,7 +91,7 @@ def find_clusters_and_go_enrichment(total_gene_list_file_name, gene_expression_f
             output_rows.append((desc, "\r\n".join(gene_headers_row_cluster), url, "\r\n".join(go_ns),
                                 "\r\n".join(go_terms), "\r\n".join(go_names) , "\r\n".join(map(str, uncorrectd_pvals)), "\r\n".join(map(str, FDRs))))
 
-    print_to_excel(output_rows=output_rows, gene_list_file_name=total_gene_list_file_name.split(".")[0],gene_expression_file_name=gene_expression_file_name.split(".")[0],var_th_index=var_th_index)
+    print_to_excel(output_rows=output_rows, gene_list_file_name=tested_gene_list_file_name.split(".")[0], gene_expression_file_name=gene_expression_file_name.split(".")[0], var_th_index=var_th_index)
 
 
 def separate_headers(total_gene_expression):

@@ -50,7 +50,7 @@ def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-T
     f.close()
     return lines
 
-gene_file_name = "warburg_gene_symbols.txt"
+gene_file_name = "kegg_melanoma_gene_symbols.txt"
 lines = load_gene_list(gene_file_name)
 lines_uppered = []
 for i, cur in enumerate(lines):

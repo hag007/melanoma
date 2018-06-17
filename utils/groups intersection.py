@@ -21,6 +21,7 @@ from statsmodels.sandbox.stats.multicomp import fdrcorrection0
 import time
 from matplotlib.ticker import FormatStrFormatter
 import math
+import constants
 import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
@@ -33,21 +34,21 @@ PRIMARY_TUMOR = "Primary Tumor"
 METASTATIC = "Metastatic"
 
 
-def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
+def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,"list",gene_list_file_name)
+        gene_list_path = os.path.join(constants.LIST_DIR,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
     return lines
 
 
-lines_1 = load_gene_list("lysosome_genes.txt")
+lines_1 = load_gene_list("tca_pathcards.txt")
 lines_uppered = []
 for i, cur in enumerate(lines_1):
     lines_1[i] = lines_1[i].upper()
 
-lines_2 = load_gene_list("protein_coding.txt")
+lines_2 = load_gene_list("glycolysis_pathcards.txt") # glycolysis_pathcards
 lines_uppered = []
 for i, cur in enumerate(lines_2):
     lines_2[i] = lines_2[i].upper()

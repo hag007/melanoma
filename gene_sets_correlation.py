@@ -28,15 +28,19 @@ def find_sets_correlations(tested_gene_list_file_name, total_gene_list_file_name
         expression_sets.append([x[1:] for x in total_gene_expression if x[0].split('.')[0] in gene_sets[-1] or x[0] in gene_sets[-1]])
         averaged_expression_sets.append((np.mean(np.array(expression_sets[-1]).astype('float32'),axis=0), np.mean(np.var(np.array(expression_sets[-1]).astype('float32'), axis=0))))
 
-    print "\tavg var",
+    output = ""
+    output+= "\tavg var"
     for i, cur_1 in enumerate(averaged_expression_sets):
-        print "\tgroup {} (n={}):".format(tested_gene_list_file_name[i].split('.')[0], len(gene_sets[i])),
-    print ""
+        output += "\tgroup {} (n={}):".format(tested_gene_list_file_name[i].split('.')[0], len(gene_sets[i]))
+    output += "\n"
     for i, cur_1 in enumerate(averaged_expression_sets):
-        print "group {} (n={}):".format(tested_gene_list_file_name[i].split('.')[0], len(gene_sets[i])),
-        print "\t"+str(cur_1[1]),
+        output += "group {} (n={}):".format(tested_gene_list_file_name[i].split('.')[0], len(gene_sets[i]))
+        output += "\t"+str(cur_1[1])
         for j, cur_2 in enumerate(averaged_expression_sets):
             if j <= i:
-                print "\t"+str(pearsonr(cur_1[0], cur_2[0])[0]),
-        print ""
+                output += "\t"+str(pearsonr(cur_1[0], cur_2[0])[0])
+        output += "\n"
 
+    f = file(os.path.join(constants.OUTPUT_DIR, "CORRELATIONS_{}_{}.txt".format(gene_expression_file_name.split(".")[0], time.time())), 'w+')
+    f.write(output)
+    f.close()
