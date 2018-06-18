@@ -82,8 +82,8 @@ from cox_gene_analysis import *
 
 ##################### OVERLAPING ################
 
-find_sets_overlaps(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "review.txt", "review_high.txt", "review_low.txt", "warburg_high.txt", "warburg_low.txt", "warburg.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
-                       total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
+# find_sets_overlaps(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_phosphorylation_pathcards.txt", "glycolysis_pathcards.txt", "mito.txt", "oxidative.txt", "review.txt", "review_high.txt", "review_low.txt", "warburg_high.txt", "warburg_low.txt", "warburg.txt", "oxidative_HIF.txt", "pyruvate.txt", "ldha_singular.txt"],
+#                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv")
 
 
 ##################### CLUSTERS AND ENRICHMENT ################
@@ -92,21 +92,36 @@ find_sets_overlaps(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_p
 
 ##################### CLUSTERS AND SURVIVAL ################
 
-# for dataset in ["ACC","PAAD", "LAML", "CHOL", "UVM", "LUAD", "LUSC", "BRCA"]:
-# for dataset in ["SKCM"]:
-#     constants.update_dirs(CANCER_TYPE_u=dataset)
-#     data_normalizaton = "counts_normalized_by_patients"
-#     gene_expression_file_name, phenotype_file_name, survival_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-#     tested_gene_list_file_name="mito.txt"
-#     total_gene_list_file_name="protein_coding_long.txt"
-#     var_th_index=None
-#     is_unsupervised=True
-#     start_k=2
-#     end_k=2
-#     groups=None #[{"gender.demographic": {"type": "string", "value": ["male"]}},
-#                                        # {"gender.demographic": {"type": "string", "value": ["female"]}}]
-#
-#     find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, groups=groups)
+# for dataset in ["LAML"]:
+for dataset in constants.ALL_CANCER_TYPES:
+    constants.update_dirs(CANCER_TYPE_u=dataset)
+    data_normalizaton = "counts"
+    gene_expression_file_name, phenotype_file_name, survival_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+    tested_gene_list_file_name="mito.txt"
+    total_gene_list_file_name="protein_coding_long.txt"
+    var_th_index=None
+    is_unsupervised=False
+    start_k=2
+    end_k=2
+    groups=None #[{"gender.demographic": {"type": "string", "value": ["male"]}},
+                                       # {"gender.demographic": {"type": "string", "value": ["female"]}}]
+    meta_groups = None
+    meta_groups=[
+        [
+            {"sample_type.samples": {"type": "string", "value": ["Primary Tumor", "Metastatic", "Additional - New Parimary", "Additional Metastatic", "Primary Blood Derived Cancer - Peripheral Blood"]
+                                     }
+             },
+            {"sample_type.samples": {"type": "string",
+                                     "value": ["Blood Derived Normal", "Solid Tissue Normal", "Bone Marrow Normal", "Buccal Cell Normal"]
+                                     }
+             }
+            ]
+    ]
+    filter_expression = None #[{"sample_type.samples": {"type": "string", "value": ["Primary Tumor", "Metastatic", "Additional - New Parimary", "Additional Metastatic", "Primary Blood Derived Cancer - Peripheral Blood"]}}]
+        # , "person_neoplasm_cancer_status" : {"type": "string", "value" : ["TUMOR FREE"]}}]
+
+    print "process {}".format(dataset)
+    find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups)
 
 #################### SVM PREDICTION ##########################
 
@@ -122,7 +137,7 @@ find_sets_overlaps(tested_gene_list_file_name=["tca_pathcards.txt", "oxidative_p
 # prediction_by_gene_expression(gene_list_file_names=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, rounds=rounds, rank_method=rank_method, labels_permutation=constants.LABELS_NORMAL, compare_to_random = True,
 #                               groups=[{"gender.demographic" : {"type": "string", "value" : ["male"]}},
 #                                       {"gender.demographic": {"type": "string", "value": ["female"]}}])
-
+#
 # groups=[{"person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}},
 #                                       {"person_neoplasm_cancer_status": {"type": "string", "value": ["TUMOR FREE"]}}]
 

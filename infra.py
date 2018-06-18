@@ -33,7 +33,7 @@ def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.hts
     return lines
 
 # return gene expression table filtered according an external list with proper orientation (0 degree angle according genes, 90 degree angle according patients)
-def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, source="GDC-TCGA",dataset="melanoma",by_gene=False):
+def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None ,by_gene=False):
     stopwatch = Stopwatch()
     stopwatch.start()
     gene_list = load_gene_list(gene_list_file_name=gene_list_file_name, gene_list_path=gene_list_path)
@@ -63,11 +63,11 @@ def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name,
     return expression_profiles_filtered
 
 
-def load_gene_expression_profile_by_genes(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, source="GDC-TCGA",dataset="melanoma"):
-    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, source=source,dataset=dataset,by_gene=True)
+def load_gene_expression_profile_by_genes(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None):
+    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, by_gene=True)
 
-def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, source="GDC-TCGA",dataset="melanoma"):
-    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, source=source,dataset=dataset,by_gene=False)
+def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None):
+    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path,by_gene=False)
 
 
 def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):
@@ -102,22 +102,25 @@ def divided_patient_ids_by_label(phenotype_list_file_name, phenotype_list_path=N
         patients_by_labeling.append([])
     label_indices = []
     duplicates_counter = 0
-    for i, pp in enumerate(phenotype_profiles):
-        for j, cur_group in enumerate(groups):
-            dup=0
-            is_hold_constraits = True
-            for k,v in cur_group.iteritems():
-                if len(pp) <= headers.index(k): continue
-                if v['type'] == "string":
-                    if not any([pp[headers.index(k)] == cur for cur in v["value"]]):
-                        is_hold_constraits = False
-            if is_hold_constraits:
-                patients_by_labeling[j].append(pp[0])
-                dup+=1
-        if dup > 1:
-            duplicates_counter+=1
-    print "number of duplciated patients: {}".format(duplicates_counter)
-
+    try:
+        for i, pp in enumerate(phenotype_profiles):
+            for j, cur_group in enumerate(groups):
+                dup=0
+                is_hold_constraits = True
+                for k,v in cur_group.iteritems():
+                    if len(pp) <= headers.index(k): continue
+                    if v['type'] == "string":
+                        if not any([pp[headers.index(k)] == cur for cur in v["value"]]):
+                            is_hold_constraits = False
+                if is_hold_constraits:
+                    patients_by_labeling[j].append(pp[0])
+                    dup+=1
+            if dup > 1:
+                duplicates_counter+=1
+        print "number of duplicated patients: {}".format(duplicates_counter)
+    except ValueError:
+        print ValueError
+        pass
     return (patients_by_labeling)
 
 

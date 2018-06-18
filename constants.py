@@ -29,6 +29,8 @@ GO_OBO_URL = 'http://purl.obolibrary.org/obo/go/go-basic.obo'
 GO_FILE_NAME = 'go-basic.obo'
 ASSOICATION_FINE_NAME = "gene2go"
 
+ALL_CANCER_TYPES = ["ESCA", "LAML", "ACC", "CHOL", "BLCA", "BRCA", "CESC", "COAD", "UCEC", "GBM", "HNSC", "KICH", "KIRC", "KIRP", "DLBC", "LIHC", "LGG", "LUAD", "LUSC", "SKCM", "MESO", "UVM", "PANCAN", "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "STAD", "TGCT", "THYM", "THCA", "UCS"]
+
 def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR=None, DATASET_TYPE_u = "GDC-TCGA", CANCER_TYPE_u = "SKCM"):
 
     global BASE_PROFILE
