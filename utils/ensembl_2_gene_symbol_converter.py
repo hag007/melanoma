@@ -36,7 +36,7 @@ METASTATIC = "Metastatic"
 
 def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,"list",gene_list_file_name)
+        gene_list_path = os.path.join(constants.LIST_DIR,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -50,7 +50,7 @@ def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="TCGA"
     f.close()
     return lines
 
-lines = load_gene_list("oxidative.txt")
+lines = load_gene_list("corr_mito_top_20.txt")
 lines_uppered = []
 for i, cur in enumerate(lines):
     if cur.find('.') > 0:
@@ -73,7 +73,7 @@ for cur in lines_dict[1:]:
     else:
         limit = len(splited_line[0])
     if splited_line[0][:limit] in lines:
-        included_genes.append(splited_line[1])
+        included_genes.append((splited_line[0][:limit],splited_line[1]))
 
 for cur in included_genes:
     print cur

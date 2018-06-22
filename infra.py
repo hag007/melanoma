@@ -108,6 +108,7 @@ def divided_patient_ids_by_label(phenotype_list_file_name, phenotype_list_path=N
                 dup=0
                 is_hold_constraits = True
                 for k,v in cur_group.iteritems():
+                    if k == "_label": continue
                     if len(pp) <= headers.index(k): continue
                     if v['type'] == "string":
                         if not any([pp[headers.index(k)] == cur for cur in v["value"]]):
@@ -203,3 +204,108 @@ def load_sets(fl_name):
         lst.append(cur.split(constants.SEPARATOR)[:-1])
         lst[-1][-1] = float(lst[-1][-1])
     return lst
+
+
+def labels_assignments(meta_groups, phenotype_file_name, patients_list):
+    labels_assignment = []
+    for i, cur_groups in enumerate(meta_groups):
+        labeled_patients = divided_patient_ids_by_label(phenotype_file_name, groups=cur_groups)
+        cur_labeled = np.array(patients_list)
+        for j, cur_patients_group in enumerate(labeled_patients):
+            cur_labeled[np.in1d(cur_labeled, cur_patients_group)] = j + 1
+        cur_labeled[~np.core.defchararray.isdigit(cur_labeled)] = 0
+        labels_assignment.append(cur_labeled.astype(np.int32))
+    return labels_assignment
+
+
+def separate_headers(total_gene_expression):
+    total_gene_expression = np.array(total_gene_expression)
+    total_gene_expression_headers_columns = total_gene_expression[0][1:]
+    total_gene_expression_headers_rows = total_gene_expression[1:, 0]
+    total_gene_expression = total_gene_expression[1:]
+    total_gene_expression = total_gene_expression[:, 1:]
+    total_gene_expression = total_gene_expression.astype(np.float32)
+    return total_gene_expression_headers_rows, total_gene_expression_headers_columns, total_gene_expression
+
+
+def load_integrated_ge_data(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name,
+                            survival_file_name, phenotype_file_name, gene_filter_file_name=None, filter_expression=None,
+                            meta_groups=None, var_th_index=None):
+    tested_gene_expression = np.array(
+        load_gene_expression_profile_by_genes(tested_gene_list_file_name, gene_expression_file_name,
+                                              gene_filter_file_name))
+    survival_dataset = np.array(load_survival_data(survival_file_name, survival_list_path=None))
+
+    if np.shape(tested_gene_expression)[0] < 2:
+        print "no expressions were found for the specific gene list {}. skipping...".format(
+            tested_gene_list_file_name.split(".")[0])
+        return None
+
+    if filter_expression is not None:
+        filtered_patients = divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression)[0]
+        print "number of filtered patients from phenotypes: {}".format(len(filtered_patients))
+    else:
+        filtered_patients = np.append(tested_gene_expression[0, 1:], survival_dataset[1:, 0])
+
+    tested_gene_expression = filter_gene_expression_by_patients(filtered_patients, tested_gene_expression)
+    if np.shape(tested_gene_expression)[1] == 1:
+        print "no expressions were found after filtering by labels {}. skipping...".format(filter_expression)
+        return None
+
+    survival_dataset = filter_survival_by_patients(filtered_patients, survival_dataset)
+    if np.shape(survival_dataset)[0] == 1:
+        print "no survival were found after filtering by labels {}. skipping...".format(filter_expression)
+        return None
+
+    print "total patients taken into account: {}".format(
+        len([x for x in survival_dataset[:, 0] if x in tested_gene_expression[0, 1:]]))
+
+    labels_assignment = None
+    if meta_groups is not None:
+        labels_assignment = labels_assignments(meta_groups, phenotype_file_name,
+                                               np.array(tested_gene_expression)[0, 1:])
+
+    tested_gene_expression_headers_rows, tested_gene_expression_headers_columns, tested_gene_expression = separate_headers(
+        tested_gene_expression)
+
+    total_gene_list = load_gene_list(total_gene_list_file_name)
+    gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns = filter_top_var_genes(
+        tested_gene_expression, tested_gene_expression_headers_columns,
+        tested_gene_expression_headers_rows, var_th_index)
+
+    return (gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns, labels_assignment, survival_dataset)
+
+
+def filter_top_var_genes(tested_gene_expression, tested_gene_expression_headers_columns,
+                         tested_gene_expression_headers_rows, var_th_index):
+    row_var = np.var(tested_gene_expression, axis=1)
+    row_var_sorted = np.sort(row_var)[::-1]
+    if var_th_index is None:
+        var_th_index = len(row_var_sorted) - 1
+    row_var_th = row_var_sorted[var_th_index]
+    row_var_masked_indices = np.where(row_var_th > row_var)[0]
+    gene_expression_top_var = np.delete(tested_gene_expression, row_var_masked_indices, axis=0)
+    gene_expression_top_var_headers_rows = np.delete(tested_gene_expression_headers_columns, row_var_masked_indices,
+                                                     axis=0)
+    gene_expression_top_var_headers_columns = tested_gene_expression_headers_rows
+    gene_expression_top_var = np.rot90(np.flip(gene_expression_top_var, 1), k=-1, axes=(1, 0))
+
+    return gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns
+
+
+def filter_survival_by_patients(filtered_patients, survival_dataset):
+    filtered_survival_bool = np.in1d(survival_dataset[:, 0], filtered_patients)
+    filtered_survival_bool[0] = True
+    print "Total n patients in survival before filtering: {}".format(np.shape(survival_dataset)[0] - 1)
+    survival_dataset = survival_dataset[filtered_survival_bool, :]
+    print "Total n patients in survival after filtering: {}".format(np.shape(survival_dataset)[0] - 1)
+    return survival_dataset
+
+
+def filter_gene_expression_by_patients(filtered_patients, tested_gene_expression):
+    filtered_gene_expression_bool = np.in1d(tested_gene_expression[0], filtered_patients)
+    filtered_gene_expression_bool[0] = True
+    print "Total n patients in expression before filtering: {}".format(np.shape(tested_gene_expression)[1] - 1)
+    tested_gene_expression = tested_gene_expression[:, filtered_gene_expression_bool]
+    print "Total n patients in expression after filtering: {}".format(np.shape(tested_gene_expression)[1] - 1)
+    return tested_gene_expression

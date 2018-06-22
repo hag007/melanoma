@@ -15,34 +15,47 @@ pheno_start = 1
 pheno_limit = 135
 
 
-def cox_gene(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows):
-    tested_gene_list = "test.txt"
-    survival_dataset = load_survival_data("TCGA-SKCM.survival.tsv", survival_list_path=None)
-    gene_expression_dataset = load_gene_expression_profile_by_patients(tested_gene_list, "TCGA-SKCM.htseq_counts.tsv")
-
+def cox_gene(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows,tested_genes_file_name ,gene_expression_file_name, phenotype_file_name, survival_file_name, filter_expression=None):
+    tested_genes = load_gene_list(tested_genes_file_name)
+    survival_dataset = np.array(load_survival_data(survival_file_name, survival_list_path=None))
+    gene_expression_dataset = np.array(load_gene_expression_profile_by_genes(tested_genes_file_name, gene_expression_file_name))
+    if filter_expression is not None:
+        filtered_patients = divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression)[0]
+        print "number of filtered patients from phenotypes: {}".format(len(filtered_patients))
+    else:
+        filtered_patients = np.append(gene_expression_dataset[0,1:] ,survival_dataset[1:,0])
+    filtered_gene_expression_bool = np.in1d(gene_expression_dataset[0], filtered_patients)
+    filtered_gene_expression_bool[0]=True
+    filtered_survival_bool = np.in1d(survival_dataset[:,0], filtered_patients)
+    filtered_survival_bool[0] = True
+    print "Total n patients in expression before filtering: {}".format(np.shape(gene_expression_dataset)[1] - 1)
+    gene_expression_dataset = gene_expression_dataset[:,filtered_gene_expression_bool]
+    print "Total n patients in expression after filtering: {}".format(np.shape(gene_expression_dataset)[1]-1)
+    gene_expression_dataset = np.rot90(np.flip(gene_expression_dataset, 1), k=-1, axes=(1, 0))
     expression_survival_integrated = {}
     for cur_expression in gene_expression_dataset[1:]:
         expression_survival_integrated[cur_expression[0]] = cur_expression[pheno_start:pheno_limit]
     for cur_survival in survival_dataset[1:]:
         if expression_survival_integrated.has_key(cur_survival[0]):
-            expression_survival_integrated[cur_survival[0]] = list(expression_survival_integrated[cur_survival[0]]) + cur_survival[4:]
+            expression_survival_integrated[cur_survival[0]] = list(expression_survival_integrated[cur_survival[0]]) + list(cur_survival[4:])
     for k, v in dict(expression_survival_integrated).iteritems():
         if len(v) != len(gene_expression_dataset[0][pheno_start:pheno_limit]) + len(survival_dataset[0][4:]):
             expression_survival_integrated.pop(k, None)
 
     if filter_type==FILTER_IN:
-        filtered_list = filtered_in
+        filtered_list = tested_genes
     else:
+        tested_genes = load_gene_list("")
         filtered_list = filtered_out
     if test_independently:
         for i, cur in enumerate(filtered_list):
             results = test_cox(gene_expression_dataset, survival_dataset, expression_survival_integrated, [cur]+ OS_FIELDS, filter_type, filter_na_by_rows)
             if i == 0:
-                f.write(results)
+                return results
             else:
-                f.write(results[results.index('\n')+1:])
+                return results[results.index('\n')+1:]
     else:
-        f.write(test_cox(gene_expression_dataset, survival_dataset, expression_survival_integrated, filtered_list+ OS_FIELDS, filter_type, filter_na_by_rows))
+        return test_cox(gene_expression_dataset, survival_dataset, expression_survival_integrated, filtered_list+ OS_FIELDS, filter_type, filter_na_by_rows)
 
 def test_cox(phenotype_dataset, survival_dataset, pheno_survival_integrated, filtered_list, filter_type, filter_na_by_rows):
     headers = list(phenotype_dataset[0][0:1]) + list(phenotype_dataset[0][pheno_start:pheno_limit]) + list(survival_dataset[0][4:])

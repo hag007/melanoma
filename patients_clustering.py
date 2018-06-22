@@ -1,7 +1,7 @@
 import Bio.UniProt.GOA as GOA
 # from orangecontrib.bio.go import Ontology
 import wget
-from utils.ensembl2entrez import ensembl2entrez_convertor
+from utils.ensembl2gene_symbol import e2g_convertor
 import time
 import requests
 import scipy.special
@@ -33,79 +33,44 @@ from goatools.associations import read_ncbi_gene2go
 from lifelines import KaplanMeierFitter
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import rankdata
+from genes_statistic import plot_genes_statistic
 
 ############################ () cluster and enrichment #############################
 
 
 # () main
-def find_clusters_and_survival(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, survival_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, is_unsupervised=True, start_k=2, end_k=3, meta_groups=None, filter_expression=None):
+def find_clusters_and_survival(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, survival_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, is_unsupervised=True, start_k=2, end_k=2, meta_groups=None, filter_expression=None):
 
-    tested_gene_expression = np.array(load_gene_expression_profile_by_genes(tested_gene_list_file_name, gene_expression_file_name, gene_filter_file_name))
-    survival_dataset = np.array(load_survival_data(survival_file_name, survival_list_path=None))
-    if np.shape(tested_gene_expression)[0] < 2:
-        print "no expressions were found for the specific gene list {}. skipping...".format(tested_gene_list_file_name.split(".")[0])
+    data = load_integrated_ge_data(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name,                                                                                                                                                    phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, meta_groups=meta_groups, filter_expression=filter_expression)
+    if data is None:
+        print "insufficient data"
         return
-    if filter_expression is not None:
-        filtered_patients = divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression)[0]
-    else:
-        filtered_patients = np.append(tested_gene_expression[0,1:] ,survival_dataset[1:,0])
-    filtered_gene_expression_bool = np.in1d(tested_gene_expression[0], filtered_patients)
-    filtered_gene_expression_bool[0]=True
-    filtered_survival_bool = np.in1d(survival_dataset[:,0], filtered_patients)
-    filtered_survival_bool[0] = True
-    print "Total n patients in expression before filtering: {}".format(np.shape(tested_gene_expression)[1] - 1)
-    tested_gene_expression = tested_gene_expression[:,filtered_gene_expression_bool]
-    print "Total n patients in expression after filtering: {}".format(np.shape(tested_gene_expression)[1]-1)
-    if np.shape(tested_gene_expression)[1] == 1:
-        print "no expressions were found after filtering by labels {}. skipping...".format(filter_expression)
-        return
+    gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns, labels_assignment, survival_dataset = data
 
-    print "Total n patients in survival before filtering: {}".format(np.shape(survival_dataset)[0] - 1)
-    survival_dataset = survival_dataset[filtered_survival_bool,:]
-    print "Total n patients in survival after filtering: {}".format(np.shape(survival_dataset)[0]-1)
-    if np.shape(survival_dataset)[0] == 1:
-        print "no survival were found after filtering by labels {}. skipping...".format(filter_expression)
-        return
-
-    if meta_groups is not None:
-        labels_assignment = labels_assignments(meta_groups, phenotype_file_name,
-                                               np.array(tested_gene_expression)[0, 1:])
-    else:
-        labels_assignment = None
-
-    tested_gene_expression_headers_rows, tested_gene_expression_headers_columns, tested_gene_expression = separate_headers(tested_gene_expression)
-    total_gene_list = load_gene_list(total_gene_list_file_name)
-    row_var = np.var(tested_gene_expression,axis=1)
-    row_var_sorted = np.sort(row_var)[::-1]
-    if var_th_index is None:
-        var_th_index = len(row_var_sorted)-1
-    row_var_th = row_var_sorted[var_th_index]
-    row_var_masked_indices = np.where(row_var_th > row_var)[0]
-    gene_expression_top_var = np.delete(tested_gene_expression, row_var_masked_indices, axis=0)
-    gene_expression_top_var_headers_rows = np.delete(tested_gene_expression_headers_rows, row_var_masked_indices, axis=0)
-    gene_expression_top_var = np.rot90(np.flip(gene_expression_top_var, 1), k=1, axes=(1,0))
+    plot_genes_statistic(gene_expression_top_var, gene_expression_top_var_headers_columns, tested_gene_list_file_name)
 
     if is_unsupervised:
         clfs_results = find_clusters(end_k, gene_expression_top_var, gene_expression_top_var_headers_rows,
-                                    start_k, tested_gene_expression_headers_columns,
+                                    start_k, gene_expression_top_var_headers_columns,
                                    tested_gene_list_file_name, labels_assignment)
 
         for i in range(start_k,end_k+1):
-            km_curve(clfs_results[i], survival_dataset[1:], tested_gene_expression_headers_columns, tested_gene_list_file_name.split(".")[0],i)
+            km_curve(clfs_results[i], survival_dataset[1:], gene_expression_top_var_headers_rows, tested_gene_list_file_name.split(".")[0],i)
     else:
         for i, cur_groups in enumerate(meta_groups):
             labeled_patients = divided_patient_ids_by_label(phenotype_file_name, groups=cur_groups)
-            km_curve(labeled_patients, survival_dataset[1:], tested_gene_expression_headers_columns, tested_gene_list_file_name.split(".")[0],label_index=i)
+            km_curve(labeled_patients, survival_dataset[1:], gene_expression_top_var_headers_rows, tested_gene_list_file_name.split(".")[0],label_index=i)
             plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_rows,
-                         [labels_assignment[i]] + labels_assignment[:i] + labels_assignment[i+1:], tested_gene_expression_headers_columns,
+                         [labels_assignment[i]] + labels_assignment[:i] + labels_assignment[i+1:], gene_expression_top_var_headers_columns,
                              tested_gene_list_file_name, label_index=i)
 
 
 def find_clusters(end_k, gene_expression_top_var, gene_expression_top_var_headers_rows, start_k,
-                tested_gene_expression_headers_columns, tested_gene_list_file_name, labels_assignment=None):
+                gene_expression_top_var_headers_columns, tested_gene_list_file_name, labels_assignment=None):
     clfs_results = {}
     for n_clusters in range(start_k, end_k + 1):
         clfs_results[n_clusters] = []
+
         km_clf = KMeans(n_clusters).fit(gene_expression_top_var)
         ranks = []
         for i in range(n_clusters):
@@ -121,15 +86,15 @@ def find_clusters(end_k, gene_expression_top_var, gene_expression_top_var_header
 
         for i in range(n_clusters):
             cluster_indices = np.where(cluster_labels != i)[0]
-            gene_expression_cluster = np.delete(tested_gene_expression_headers_columns, cluster_indices, axis=0)
-            gene_headers_column_cluster = np.delete(tested_gene_expression_headers_columns, cluster_indices, axis=0)
+            gene_expression_cluster = np.delete(gene_expression_top_var_headers_rows, cluster_indices, axis=0)
+            gene_headers_column_cluster = np.delete(gene_expression_top_var_headers_rows, cluster_indices, axis=0)
             clfs_results[n_clusters].append(gene_headers_column_cluster)
             desc = "k={} clustering cluster {} has {} genes".format(n_clusters, i, len(gene_expression_cluster))
 
         # gene_expression_top_var = np.c_[gene_expression_top_var,km_clf.labels_]
 
         plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_rows,
-                     labels_assignment, tested_gene_expression_headers_columns,
+                     labels_assignment, gene_expression_top_var_headers_rows,
                      tested_gene_list_file_name, n_clusters)
     return clfs_results
 
@@ -168,11 +133,11 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_rows, 
         data = ax2.imshow(cur[cluster_labels.argsort()].reshape((len(cluster_labels), 1)), cmap='jet', aspect='auto')
     # ax = plt.subplot(111)
     ax1.set_xticks(np.arange(len(gene_expression_top_var_headers_rows)))
-    ax1.set_yticks([])# [i for i in list(np.arange(len(tested_gene_expression_headers_columns))) if i % 10 == 0])
-    ax1.set_xticklabels(gene_expression_top_var_headers_rows)
+    # ax1.set_yticks([])# [i for i in list(np.arange(len(tested_gene_expression_headers_columns))) if i % 10 == 0])
+    ax1.set_xticklabels(e2g_convertor(gene_expression_top_var_headers_rows))
     ax1.set_yticklabels([])# [x for i, x in enumerate(cluster_labels[cluster_labels.argsort()]) if i % 10 == 0])
     for label in ax1.xaxis.get_ticklabels():
-        label.set_fontsize(3)
+        label.set_fontsize(5)
         label.set_rotation(90)
     for label in ax1.yaxis.get_ticklabels():
         label.set_fontsize(3)
@@ -181,9 +146,9 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_rows, 
     data = ax1.imshow(gene_expression_top_var[cluster_labels.argsort(), :], cmap='jet', aspect='auto')
     cb = plt.colorbar(data, ax=axes, fraction=0.05, pad=0.04)
     plt.savefig(os.path.join(constants.BASE_PROFILE, "output",
-                             "heatmap_cluster_by_p_{}_{}_k={}_label_i={}.png".format(constants.CANCER_TYPE,
+                             "heatmap_cluster_by_p_{}_{}_k={}_label_i={}_{}.png".format(constants.CANCER_TYPE,
                                                                           tested_gene_list_file_name.split(".")[0],
-                                                                          n_clusters, label_index)))
+                                                                          n_clusters, label_index, time.time())))
     # "heatmap_cluster_by_p_{}_{}_k={}.svg".format(constants.CANCER_TYPE, tested_gene_list_file_name.split(".")[0], n_clusters)), format='svg', dpi=1200)
     # plt.clim(np.min(gene_expression_top_var),np.max(gene_expression_top_var))
     # plt.show()
@@ -193,6 +158,7 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_rows, 
 
 def km_curve(labels_ids, survival_dataset, tested_gene_expression_headers_columns, gene_group , k=None, label_index=None):
     ax = plt.subplot(111)
+    # box = ax.get_position()
     # box = ax.get_position()
     # ax.set_position([box.x0, box.y0 + box.height * 0.1,
     #                  box.width, box.height * 0.9])
@@ -209,20 +175,24 @@ def km_curve(labels_ids, survival_dataset, tested_gene_expression_headers_column
         label_event = survival_dataset[np.in1d(survival_dataset[:, 0], cur_labels) & np.in1d(survival_dataset[:, 0], tested_gene_expression_headers_columns), 4].astype(np.int32)
         label_duration = survival_dataset[np.in1d(survival_dataset[:, 0], cur_labels) & np.in1d(survival_dataset[:, 0], tested_gene_expression_headers_columns), 3].astype(np.int32)
 
+        # label_event= np.append(label_event, [0])
+        # label_duration = np.append(label_duration, [543])
+
         labels_c = all_labels[~np.in1d(all_labels,cur_labels) & np.in1d(all_labels, tested_gene_expression_headers_columns)]
         label_event_c = survival_dataset[np.in1d(survival_dataset[:, 0], labels_c), 4].astype(np.int32)
         label_duration_c = survival_dataset[np.in1d(survival_dataset[:, 0], labels_c), 3].astype(np.int32)
 
         lr_results = logrank_test(label_duration, label_duration_c, label_event, label_event_c, alpha=.95)
         if len(label_duration) != 0:
-            kmf.fit(list(label_duration), event_observed=list(label_event), label="cluster {} n={}, logrank pval = {}".format(i,len(label_duration), lr_results.p_value)) # '%.7f' %
+            kmf.fit(list(label_duration), event_observed=list(label_event), label="cluster {} n={}, logrank pval = {}".format(i,len(label_duration), '{0:1.3e}'.format(lr_results.p_value))) # '%.7f' %
             kmf.plot(ax=ax)
+            print "lrank: {}".format(lr_results.p_value)
 
     plt.ylim(0, 1);
 
     plt.title("clustering survival analysis");
     # plt.show()
-    plt.savefig(os.path.join(constants.BASE_PROFILE,"output" ,"cluster_by_p_{}_{}_k={}_label_i={}.png".format(constants.CANCER_TYPE, gene_group,k,label_index)))
+    plt.savefig(os.path.join(constants.BASE_PROFILE,"output" ,"cluster_by_p_{}_{}_k={}_label_i={}_{}.png".format(constants.CANCER_TYPE, gene_group,k,label_index , time.time())))
     plt.cla()
 
 def separate_headers(total_gene_expression):
