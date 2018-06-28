@@ -1,6 +1,7 @@
 import Bio.UniProt.GOA as GOA
 # from orangecontrib.bio.go import Ontology
 import wget
+from utils.go import check_enrichment
 from utils.ensembl2entrez import ensembl2entrez_convertor
 import time
 import requests
@@ -93,21 +94,6 @@ def find_clusters_and_go_enrichment(tested_gene_list_file_name, total_gene_list_
 
     print_to_excel(output_rows=output_rows, gene_list_file_name=tested_gene_list_file_name.split(".")[0], gene_expression_file_name=gene_expression_file_name.split(".")[0], var_th_index=var_th_index)
 
-
-def separate_headers(total_gene_expression):
-    total_gene_expression = np.array(total_gene_expression)
-    total_gene_expression_headers_columns = total_gene_expression[0]
-    total_gene_expression_headers_rows = total_gene_expression[:, 0]
-    total_gene_expression = total_gene_expression[1:]
-    total_gene_expression = total_gene_expression[:, 1:]
-    total_gene_expression = total_gene_expression.astype(np.float32)
-    return total_gene_expression_headers_rows, total_gene_expression_headers_columns, total_gene_expression
-
-
-def check_enrichment(gene_list):
-    ensembl_for_url = re.sub("\.\d{1,2},", ",", gene_list)
-    url = "http://david.abcc.ncifcrf.gov/api.jsp?type=ENSEMBL_GENE_ID&ids={}&tool=chartReport&annot=GOTERM_BP_DIRECT,GOTERM_CC_DIRECT,GOTERM_MF_DIRECT,KEGG_PATHWAY".format(ensembl_for_url)
-    return url
 
 def print_to_excel(output_rows,gene_list_file_name,gene_expression_file_name,var_th_index):
     wb = Workbook()#ffff00

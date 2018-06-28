@@ -22,7 +22,7 @@ def find_sets_correlations(tested_gene_list_file_name, total_gene_list_file_name
     gene_sets = []
     expression_sets = []
     averaged_expression_sets = []
-    total_gene_expression = load_gene_expression_profile_by_genes(total_gene_list_file_name, gene_expression_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path)
+    total_gene_expression = load_gene_expression_profile_by_genes(total_gene_list_file_name, gene_expression_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, gene_filter_file_path)
     for cur in tested_gene_list_file_name:
         gene_sets.append(load_gene_list(cur))
         expression_sets.append([x[1:] for x in total_gene_expression if x[0].split('.')[0] in gene_sets[-1] or x[0] in gene_sets[-1]])

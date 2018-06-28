@@ -45,7 +45,7 @@ def load_gene_expression_profile(gene_list_file_name=None, gene_expression_file_
     row_header = expression_profiles_filtered[0]
     column_header = expression_profiles_filtered[1:,0]
     expression_stripped = expression_profiles_filtered[1:, 1:].astype(float)
-    column_header        = column_header[(expression_stripped != 0).sum(axis=1) >= np.shape(expression_stripped)[1]*0.9]
+    column_header = column_header[(expression_stripped != 0).sum(axis=1) >= np.shape(expression_stripped)[1]*0.9]
     expression_stripped = expression_stripped[(expression_stripped != 0).sum(axis=1) >= np.shape(expression_stripped)[1] * 0.9, :]
 
     if normalization_method is not None:
@@ -84,12 +84,12 @@ def save_expression_profile(expression_profile, output_file_name):
 
 
 # ["UVM", "SKCM", "LUAD", "LUSC", "BRCA", "ACC","PAAD", "LAML", "CHOL"]
-for dataset in ["SKCM"]:
+for dataset in ["UVM"]:
     constants.update_dirs(CANCER_TYPE_u=dataset)
     filename = "TCGA-{}.htseq_fpkm-uq{}.tsv"
     normalization_method = "standardization"
 
-    is_by_gene = False
+    is_by_gene = True
 
     suffix = "_normalized"
     if is_by_gene:

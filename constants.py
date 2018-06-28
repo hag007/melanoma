@@ -5,9 +5,8 @@ CANCER_TYPE = "SKCM"
 BASE_PROFILE="D:\\omics\\"
 BASE_DATASET= "{}GDC-TCGA\\SKCM\\".format(BASE_PROFILE)
 CACHE_DIR = "{}cache\\".format(BASE_DATASET)
-DICT_DIR = "{}dictionaries\\".format(BASE_DATASET)
+DICTIONARIES_DIR = "{}dictionaries\\".format(BASE_DATASET)
 OUTPUT_DIR = "{}output\\".format(BASE_DATASET)
-DICTIONARIES_DIR = "{}list\\".format(BASE_DATASET)
 TCGA_DATA_DIR = "{}tcga_data\\".format(BASE_DATASET)
 LIST_DIR = "{}list\\".format(BASE_DATASET)
 
@@ -30,6 +29,15 @@ GO_OBO_URL = 'http://purl.obolibrary.org/obo/go/go-basic.obo'
 GO_FILE_NAME = 'go-basic.obo'
 ASSOICATION_FINE_NAME = "gene2go"
 
+NUM_GTE = "gte"
+NUM_GT = "gt"
+NUM_EQ = "eq"
+NUM_LTE = "lte"
+NUM_LT = "lt"
+NUM_NE = "ne"
+NUM_ALL_OPS = [NUM_EQ, NUM_GTE, NUM_GT, NUM_LTE, NUM_LT, NUM_NE]
+
+FILTER_KEYWORDS = ["_label", "_name"]
 ALL_CANCER_TYPES = ["ESCA", "LAML", "ACC", "CHOL", "BLCA", "BRCA", "CESC", "COAD", "UCEC", "GBM", "HNSC", "KICH", "KIRC", "KIRP", "DLBC", "LIHC", "LGG", "LUAD", "LUSC", "SKCM", "MESO", "UVM", "PANCAN", "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "STAD", "TGCT", "THYM", "THCA", "UCS"]
 ALL_TUMOR_TYPES = ["Primary Tumor", "Metastatic", "Additional - New Parimary", "Additional Metatatic", "Primary Blood Derived Cancer - Peripheral Blood", "Blood Derived Cancer - Bone Marrow, Post-treatment", "Primary Blood Derived Cancer - Bone Marrow", "Recurrent Blood Derived Cancer - Peripheral Blood", "Recurrent Tumor"]
 def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR=None, DATASET_TYPE_u = "GDC-TCGA", CANCER_TYPE_u = "SKCM"):
