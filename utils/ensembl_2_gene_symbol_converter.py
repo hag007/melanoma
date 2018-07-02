@@ -50,7 +50,7 @@ def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="TCGA"
     f.close()
     return lines
 
-lines = load_gene_list("corr_mito_top_20.txt")
+lines = load_gene_list("rfe_uvm_1000_3124.txt")
 lines_uppered = []
 for i, cur in enumerate(lines):
     if cur.find('.') > 0:

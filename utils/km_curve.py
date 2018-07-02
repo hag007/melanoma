@@ -28,7 +28,7 @@ def km_curve(labels_ids, survival_dataset, tested_gene_expression_headers_column
         lr_results = logrank_test(label_duration, label_duration_c, label_event, label_event_c, alpha=.95)
         if len(label_duration) != 0:
             kmf.fit(list(label_duration), event_observed=list(label_event), label="cluster {} n={}, logrank pval = {}".format(i,len(label_duration), '{0:1.3e}'.format(lr_results.p_value))) # '%.7f' %
-            kmf.plot(ax=ax)
+            kmf.plot(ax=ax, show_censors=True)
             print "lrank cluster {} vs all: {}".format(i, lr_results.p_value)
             for j, cur_duration in enumerate(label_duration_list[:-1]):
                 lr_results = logrank_test(label_duration, label_duration_list[j], label_event, label_event_list[j], alpha=.95)

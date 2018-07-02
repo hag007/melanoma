@@ -58,7 +58,7 @@ def find_clusters_and_go_enrichment(tested_gene_list_file_name, total_gene_list_
     #     wget.download(go_obo_url, os.path.join(constants.TCGA_DATA_DIR, 'goa_human.gaf'))
     obo_dag = GODag(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
 
-    assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, constants.ASSOICATION_FINE_NAME), no_top=True)
+    assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, constants.GO_ASSOCIATION_FILE_NAME), no_top=True)
     g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_list)],
                           assoc, obo_dag, methods=["bonferroni", "fdr_bh"])
     g_res = g.run_study([int(cur) for cur in ensembl2entrez_convertor(gene_expression_top_var_headers_rows)])

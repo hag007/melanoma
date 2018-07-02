@@ -5,10 +5,11 @@ CANCER_TYPE = "SKCM"
 BASE_PROFILE="D:\\omics\\"
 BASE_DATASET= "{}GDC-TCGA\\SKCM\\".format(BASE_PROFILE)
 CACHE_DIR = "{}cache\\".format(BASE_DATASET)
-DICTIONARIES_DIR = "{}dictionaries\\".format(BASE_DATASET)
+DICTIONARIES_DIR = "{}dictionaries\\".format(BASE_PROFILE)
 OUTPUT_DIR = "{}output\\".format(BASE_DATASET)
 TCGA_DATA_DIR = "{}tcga_data\\".format(BASE_DATASET)
-LIST_DIR = "{}list\\".format(BASE_DATASET)
+GO_DIR = "{}GO\\".format(BASE_PROFILE)
+LIST_DIR = "{}list\\".format(BASE_PROFILE)
 
 SEPARATOR = "@%@"
 
@@ -26,8 +27,9 @@ ENSEMBL_TO_GENE_SYMBOLS = "ensembl2gene_symbol.txt"
 ENSEMBL_TO_ENTREZ = "ensembl2entrez.txt"
 
 GO_OBO_URL = 'http://purl.obolibrary.org/obo/go/go-basic.obo'
+GO_ASSOCIATION_GENE2GEO_URL = 'https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2go.gz'
 GO_FILE_NAME = 'go-basic.obo'
-ASSOICATION_FINE_NAME = "gene2go"
+GO_ASSOCIATION_FILE_NAME = "gene2go"
 
 NUM_GTE = "gte"
 NUM_GT = "gt"
@@ -51,6 +53,7 @@ def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR=None, DATASET_TYPE_u = "GDC-
     global CANCER_TYPE
     global DATASET_TYPE
     global BASE_DATASET
+    global GO_DIR
     BASE_PROFILE=BASE_DIR
     DATASET_TYPE = DATASET_TYPE_u
     CANCER_TYPE = CANCER_TYPE_u
@@ -63,5 +66,6 @@ def update_dirs(BASE_DIR="D:\\omics\\", DATASET_DIR=None, DATASET_TYPE_u = "GDC-
     LIST_DIR = "{}list\\".format(BASE_DIR)
     TCGA_DATA_DIR = "{}tcga_data\\".format(BASE_DATASET)
     DICTIONARIES_DIR = "{}dictionaries\\".format(BASE_DIR)
+    GO_DIR = "{}GO\\".format(BASE_DIR)
 
 update_dirs()

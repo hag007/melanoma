@@ -22,6 +22,7 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV, cross_val_score
 from sklearn.model_selection import PredefinedSplit
 from sklearn.metrics import accuracy_score
+from utils.go import check_group_enrichment
 import scipy
 from scipy.stats import hypergeom
 # from statsmodels.sandbox.stats.multicomp import fdrcorrection0
@@ -57,7 +58,24 @@ from mutations_pca import mutation_pca
 from mutations_pca_by_samples import mutation_pca_by_samples
 from patients_clustring_filtered_by_mutations import cluster_patients_filtered_by_mutation
 from mutations_pca_by_samples import plot_pca_by_samples
-# RFE
+
+
+######## mHGT ###############
+
+# dataset = "UVM"
+# data_normalizaton = "fpkm"
+# tested_gene_file_name = "warburg.txt"
+# total_gene_file_name = "protein_coding.txt"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# groups = json.load(file("groups/mutation_cluster.json"))
+# N=19976
+# B = 13
+# hgt_preprocessing_file_name = "HGTs_out_19976_{}.npy".format(B)
+# find_expression_significance(tested_gene_file_name=tested_gene_file_name, total_gene_file_name=total_gene_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, groups=groups, hgt_preprocessing_file_name = hgt_preprocessing_file_name, pval_preprocessing_file_name = "pvals_protein_coding.txt", N=N, B = B)
+
+
+######## RFE ###############
 
 ## randomized by size
 #
@@ -81,17 +99,49 @@ from mutations_pca_by_samples import plot_pca_by_samples
 
 ##################### FEATURE SELECTION ################
 
-# feature_selection(["rfe1000.txt"], "TCGA-SKCM.htseq_counts.tsv", "TCGA-SKCM.GDC_phenotype.tsv", gene_filter_file_name="protein_coding.txt", rounds=30, target_genes_subset = "mito.txt", recursion_step_size=1, feature_selection_method="rfe") #Primary Tumor , batches=100, epochs=20
+# dataset = "UVM"
+# data_normalizaton = "fpkm"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# # gene_list_file_names = ["warburg.txt", "warburg_high.txt", "warburg_low.txt", "mito_warburg.txt", "mito.txt", "test.txt", "test_2.txt", "review_high.txt", "review_low.txt", "review_low.txt", "review.txt"]
+# # gene_list_file_names = [ "warburg_high.txt", "warburg_low.txt", "ldha_singular.txt", "glycolysis_go.txt"]
+# gene_list_file_names = ["rfe_uvm_roc_1000_1124.txt"]
+# gene_filter_file_name = "protein_coding.txt"
+# rounds=30
+# recursion_step_size = 10
+# feature_selection_method = "rfe"
+# rank_method = DISTANCE
+# score_method = "roc_auc"
+# target_genes_subset = "warburg_high.txt"
+# groups=json.load(file("groups/mutation_cluster.json"))
+# feature_selection(gene_list_file_name=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, groups = groups, gene_filter_file_name=gene_filter_file_name, rounds=rounds, target_genes_subset = target_genes_subset, recursion_step_size=recursion_step_size, feature_selection_method=feature_selection_method, score_method=score_method)
 
 ##################### SETS CORRELATION ################
 
-dataset = "UVM"
-constants.update_dirs(CANCER_TYPE_u=dataset)
-data_normalizaton = "fpkm_normalized_by_genes_standardization"
-gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.txt", "warburg_high.txt", "warburg_low.txt", "ldha_singular.txt"],
-                       total_gene_list_file_name="protein_coding.txt", gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name)
+# dataset = "UVM"
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# data_normalizaton = "fpkm_normalized_by_genes_standardization"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.txt", "warburg_high.txt", "warburg_low.txt", "ldha_singular.txt"],
+#                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name)
 
+
+##################### HG ENRICHMENT #########################
+
+# dataset = "UVM"
+# tested_gene_file_name = "rfe_uvm_10_3014.txt" # "warburg_low.txt"
+# total_gene_file_name = "protein_coding.txt" # "rfe_uvm_10_3014.txt"
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# check_group_enrichment(tested_gene_file_name,total_gene_file_name)
+
+
+##################### GO ENRICHMENT #########################
+
+# dataset = "UVM"
+# tested_gene_file_name = "glycolysis_go.txt" # "rfe_uvm_10_3014.txt"
+# total_gene_file_name = "rfe_uvm_10_3014.txt" # "protein_coding.txt" #
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# check_group_enrichment(tested_gene_file_name,total_gene_file_name)
 
 ##################### GENE CORRELATION SCORE ################
 
@@ -159,21 +209,21 @@ find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.tx
 
 #################### SVM PREDICTION ##########################
 
-# dataset = "SKCM"
-# data_normalizaton = "counts"
-# gene_expression_file_name, phenotype_file_name, survival_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# dataset = "UVM"
+# data_normalizaton = "fpkm"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# constants.update_dirs(CANCER_TYPE_u=dataset)
 # # gene_list_file_names = ["warburg.txt", "warburg_high.txt", "warburg_low.txt", "mito_warburg.txt", "mito.txt", "test.txt", "test_2.txt", "review_high.txt", "review_low.txt", "review_low.txt", "review.txt"]
-# gene_list_file_names = [ "kegg_melanoma.txt" ]
+# gene_list_file_names = [ "warburg_high.txt", "warburg_low.txt", "ldha_singular.txt", "glycolysis_go.txt"]
 # gene_filter_file_name = "protein_coding.txt"
 # rounds=100
 # rank_method = DISTANCE
 # results = []
+# groups=json.load(file("groups/mutation_cluster.json"))
 # prediction_by_gene_expression(gene_list_file_names=gene_list_file_names, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, rounds=rounds, rank_method=rank_method, labels_permutation=constants.LABELS_NORMAL, compare_to_random = True,
-#                               groups=[{"gender.demographic" : {"type": "string", "value" : ["male"]}},
-#                                       {"gender.demographic": {"type": "string", "value": ["female"]}}])
-#
-# groups=[{"person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}},
-#                                       {"person_neoplasm_cancer_status": {"type": "string", "value": ["TUMOR FREE"]}}]
+#                               groups=groups)
+
+
 
 #################### COX PHENOTYPE ANALYSIS ##########################
 
@@ -192,20 +242,21 @@ find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.tx
 # f.close()
 
 #################### COX GENE ANALYSIS ##########################
-# dataset = "ACC"
-# data_normalizaton = "counts"
-# gene_expression_file_name, phenotype_file_name, survival_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# dataset = "UVM"
+# data_normalizaton = "fpkm"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
 # constants.update_dirs(CANCER_TYPE_u=dataset)
 # test_independently = False
 # filtered_out = []
 # filtered_in = []
-# tested_genes_file_name = "mito.txt"
+# tested_genes_file_name = "warburg_high.txt"
 # filter_type = FILTER_IN
+# var_th_index = None
 # filter_na_by_rows = True
 # filter_expression = None
 # f = file(os.path.join(constants.BASE_PROFILE, "output","cox_genes_{}_{}.txt".format(dataset, time.time())), 'w+')
 # # filter_expression = [{"sample_type.samples": {"type": "string", "value": ["Primary Tumor"]}, "person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR", "TUMOR FREE", ""]}}]
-# results = cox_gene(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows,tested_genes_file_name = tested_genes_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, filter_expression=filter_expression)
+# results = cox_gene(test_independently, filtered_out, filtered_in, filter_type, filter_na_by_rows,tested_genes_file_name = tested_genes_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, filter_expression=filter_expression, var_th_index=var_th_index)
 # f.write(results)
 # f.close()
 
@@ -274,37 +325,38 @@ find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.tx
 
 ############ PREDICTION_BY_MUTATION ###################
 
-# for dataset in ["UVM"]:
-#     if dataset == "PANCAN": continue
-#     meta_groups = None
-#     meta_groups= [json.load(file("groups/mutation_binary.json"))]
-#
-#     constants.update_dirs(CANCER_TYPE_u=dataset)
-#     data_normalizaton = "fpkm"
-#     gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-#     random_set_file_name = generate_random_set(random_size=25, meta_gene_set="protein_coding_long.txt")
-#     tested_gene_list_file_name= "glycolysis_go.txt" # random_set_file_name #
-#     total_gene_list_file_name="protein_coding_long.txt"
-#     var_th_index=None
-#     is_unsupervised=False
-#     integ=False
-#     start_k=2
-#     end_k=2
-#     omitted_genes = [] # ["TTN", "BRAF", "GNAQ", "GNA11"]
-#     filter_expression = None
-#     d_codes = []
-#     # if meta_groups is not None:
-#     #     for cur in meta_groups[0]:
-#     #         d_codes.append(cur["tumor_stage.diagnoses"]["value"][0])
-#     # , "person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}
-#
-#     # for cur_tt in ["Primary Tumor"]:
-#     filter_expression = [json.load(file("filters/mutation_binary.json"))]
-#     print "process {}".format(dataset)
-#     phenotype_labels_heatmap = None#["breslow_depth_value"]
-#     # find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups)
-#     predict_ge_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, phenotype_labels_heatmap=phenotype_labels_heatmap, integ=integ, min_ratio=0.4, omitted_genes=omitted_genes)
-#     #cluster_patients_filtered_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, integ=True ,min_ratio=0.4)
+for dataset in ["UVM"]:
+    if dataset == "PANCAN": continue
+    meta_groups = None
+    # meta_groups= [json.load(file("groups/mutation_binary.json"))]
+
+    constants.update_dirs(CANCER_TYPE_u=dataset)
+    data_normalizaton = "fpkm"
+    gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+    random_set_file_name = generate_random_set(random_size=25, meta_gene_set="protein_coding_long.txt")
+    tested_gene_list_file_name= "warburg_low.txt" # random_set_file_name #
+    total_gene_list_file_name="protein_coding_long.txt"
+    var_th_index=None
+    is_unsupervised=True
+    integ=False
+    start_k=2
+    end_k=2
+    min_ratio = 0.2
+    omitted_genes = [] # ["TTN", "BRAF", "GNAQ", "GNA11"]
+    filter_expression = None
+    d_codes = []
+    # if meta_groups is not None:
+    #     for cur in meta_groups[0]:
+    #         d_codes.append(cur["tumor_stage.diagnoses"]["value"][0])
+    # , "person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}
+
+    # for cur_tt in ["Primary Tumor"]:
+    filter_expression = None # [json.load(file("filters/mutation_binary.json"))]
+    print "process {}".format(dataset)
+    phenotype_labels_heatmap = None#["breslow_depth_value"]
+    # find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups)
+    predict_ge_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, phenotype_labels_heatmap=phenotype_labels_heatmap, integ=integ, min_ratio=min_ratio, omitted_genes=omitted_genes)
+    #cluster_patients_filtered_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, integ=True ,min_ratio=0.4)
 
 ############ mutation PCA ##################
 
@@ -379,3 +431,5 @@ find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.tx
 #     genes_pca_by_samples(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, filter_expression= filter_expression, meta_groups = meta_groups)
 #     # predict_ge_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, phenotype_labels_heatmap=phenotype_labels_heatmap, integ=integ, min_ratio=0.9, omitted_genes=omitted_genes)
 #     # cluster_patients_filtered_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, integ=True ,min_ratio=0.4)
+
+

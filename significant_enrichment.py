@@ -9,7 +9,7 @@ import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
 logger.addHandler(sh)
-from constants import *
+import constants
 from infra import *
 
 ############################ (2) significance expression and proportion differntiations #############################
@@ -28,7 +28,7 @@ def plot_pvalues(y_axis, x_axis, th,output_file_name, is_bigger_better=False):
         else:
             color = 'red'
         plt.setp(p, 'facecolor', color)
-    plt.savefig(os.path.join(OUTPUT_DIR, output_file_name))
+    plt.savefig(os.path.join(constants.OUTPUT_DIR, output_file_name))
     plt.cla()
 
 
@@ -89,14 +89,14 @@ def plot_genes_proportion(expected_actual_difference_list, expected_actual_ratio
     plt.plot([0, total_significant_hypotheses_size], [0, expected_tested_genes_ratio],
              color="black")
     plt.legend()
-    plt.savefig(os.path.join(OUTPUT_DIR, "{}_sum_n".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
+    plt.savefig(os.path.join(constants.OUTPUT_DIR, "{}_sum_n".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
     plt.cla()
     plt.plot(rank_in_total_list_list[1:], expected_actual_ratio_difference_list[1:], label="actual/expected proportion ratio")
     plt.plot(rank_in_total_list_list[1:], z_test_proportion_test_list[1:], label="z_score")
     plt.plot(rank_in_total_list_list[1:], [z_score_threshold_two_way for i in range(1,tested_genes_size)], label="z_score threshold (two-way)")
     plt.plot([total_significant_hypotheses_size, total_significant_hypotheses_size], [-0.5, 3.5], label="True hypotheses threshold")
     plt.legend()
-    plt.savefig(os.path.join(OUTPUT_DIR, "{}_sum_p".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
+    plt.savefig(os.path.join(constants.OUTPUT_DIR, "{}_sum_p".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')])))
 
 # mHGT DP
 def calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b):
@@ -113,18 +113,18 @@ def calc_num_of_non_extremer_paths(non_extremer_paths_DP_table, HGTs, mHGT, n, b
     return non_extremer_paths_DP_table[b][n]
 
 # (2) main
-def find_expression_significance(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, source="GDC-TCGA",dataset="melanoma", hgt_preprocessing_file_name = None, pval_preprocessing_file_name= None, N = None, B = None):
-    print "about ot analyse: {}".format(tested_gene_list_file_name)
-    # fetch gene expression by gene_id, divided by tumor type
-    groups = load_expression_profile_by_labelling(total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name, total_gene_list_path, gene_expression_path, phenotype_path, gene_filter_file_path, source, dataset)
-    group_0_expression = groups[0]
-    group_1_expression = groups[1]
+def find_expression_significance(tested_gene_file_name, total_gene_file_name, gene_expression_file_name, phenotype_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_path=None, groups=None, hgt_preprocessing_file_name = None, pval_preprocessing_file_name= None, N = None, B = None):
+    print "about ot analyse: {}".format(tested_gene_file_name)
+    # fetch gene expression by gene_id, divided by tumor type11111
+    groups_results = load_expression_profile_by_labelling(gene_list_file_name=total_gene_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, gene_filter_file_name=gene_filter_file_name, tested_gene_path=total_gene_list_path, gene_expression_path=gene_expression_path, phenotype_path=phenotype_path, gene_filter_path=gene_filter_path, groups=groups)
+    group_0_expression = groups_results[0]
+    group_1_expression = groups_results[1]
     group_0_expression = np.rot90(np.flip(group_0_expression, 1), k=-1, axes=(1,0))
     group_1_expression = np.rot90(np.flip(group_1_expression, 1), k=-1, axes=(1, 0))
 
     # test pval for significance differentiation between label values (primar vs metastatic)
-    if os.path.isfile(os.path.join(CACHE_DIR, pval_preprocessing_file_name)) and USE_CACHE:
-        gene_pval_pair = load_sets(os.path.join(CACHE_DIR, pval_preprocessing_file_name))
+    if os.path.isfile(os.path.join(constants.CACHE_DIR, pval_preprocessing_file_name)) and constants.USE_CACHE:
+        gene_pval_pair = load_sets(os.path.join(constants.CACHE_DIR, pval_preprocessing_file_name))
         print "pval loaded from file"
     else:
         pvals = []
@@ -138,18 +138,18 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
         # sort gene_id-pval pairs by pval
         gene_pval_pair = zip(gene_symbols,pvals)
         gene_pval_pair.sort(key=lambda x: x[1], reverse=False)
-        save_sets(gene_pval_pair, os.path.join(CACHE_DIR, os.path.join(CACHE_DIR, pval_preprocessing_file_name)))
+        save_sets(gene_pval_pair, os.path.join(constants.CACHE_DIR, os.path.join(constants.CACHE_DIR, pval_preprocessing_file_name)))
         print "pval saved to file"
     # plot pvals
     pvals = [cur[1] for cur in gene_pval_pair]
     logger.info("pvals (uncorrected) below 0.05: {}".format(np.sum([True if pv < 0.05 else False for pv in pvals])))
-    plot_pvalues(pvals, [i * 0.01 for i in range(101)], 0.05, "{}_01".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')]))
-    plot_pvalues_log_scaled(pvals, range(100), 0.05, "{}_02".format(tested_gene_list_file_name[:tested_gene_list_file_name.find('.')]))
+    plot_pvalues(pvals, [i * 0.01 for i in range(101)], 0.05, "{}_01".format(tested_gene_file_name[:tested_gene_file_name.find('.')]))
+    plot_pvalues_log_scaled(pvals, range(100), 0.05, "{}_02".format(tested_gene_file_name[:tested_gene_file_name.find('.')]))
     print "gene expression t-test done"
     #### mHGT
     print "start mHGT"
-    tested_gene_list = load_gene_list(gene_list_file_name=tested_gene_list_file_name)
-    total_gene_list = load_gene_list(gene_list_file_name=total_gene_list_file_name)
+    tested_gene_list = load_gene_list(gene_list_file_name=tested_gene_file_name)
+    total_gene_list = load_gene_list(gene_list_file_name=total_gene_file_name)
     lambda_group_inclusion_binary_vector = [1 if cur[0] in tested_gene_list else 0 for i, cur in
                                             enumerate(gene_pval_pair)]  # and i < true_counter
     print "gene list loading done"
@@ -166,8 +166,8 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
     # non_extremer_paths_DP_table = np.full((B+1, N+1), long(-1))
     if not hgt_preprocessing_file_name:
         hgt_preprocessing_file_name = "HGTs_out_{}_{}.npy".format(N,B)
-    if os.path.isfile(os.path.join(CACHE_DIR, hgt_preprocessing_file_name)) and USE_CACHE:
-        HGTs =  np.load(os.path.join(CACHE_DIR, hgt_preprocessing_file_name))
+    if os.path.isfile(os.path.join(constants.CACHE_DIR, hgt_preprocessing_file_name)) and constants.USE_CACHE:
+        HGTs =  np.load(os.path.join(constants.CACHE_DIR, hgt_preprocessing_file_name))
         print "hgt loaded from file"
         # left_tails = [(hypergeom.sf(i, N, B, i) + hypergeom.pmf(i, N, B, i)) for i in range(0,B+1)]
         # top_tails = [(hypergeom.sf(B, N, B, i) + hypergeom.pmf(B, N, B, i)) for i in range(0,N+1)]
@@ -180,7 +180,7 @@ def find_expression_significance(tested_gene_list_file_name, total_gene_list_fil
             else:
                HGTs = b_tails
         HGTs[0][0] = 1
-        np.save(os.path.join(CACHE_DIR, hgt_preprocessing_file_name), HGTs)
+        np.save(os.path.join(constants.CACHE_DIR, hgt_preprocessing_file_name), HGTs)
         print "hgt saved to file"
 
     print "HGTs calculations done"

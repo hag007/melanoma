@@ -84,12 +84,12 @@ def univariate_feature_selection():
     plt.legend(loc='upper right')
     plt.show()
 
-def load_data(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None):
+def load_data(tested_gene_file_names, expression_profile_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, groups=None):
     genelist_datasets = []
     for tested_gene_file_name in tested_gene_file_names:
         data, labels, _0, gene_ids = my_svm.load_svm_data(tested_gene_file_name, expression_profile_file_name,
                                                  phenotype_file_name, label, label_values,
-                                                 gene_filter_file_name)
+                                                 gene_filter_file_name, groups)
         genelist_datasets.append(data)
 
     return (genelist_datasets, labels, gene_ids)
@@ -188,7 +188,7 @@ def tree_feature_selection():
 
 def feature_selection(gene_list_file_name, gene_expression_file_name, phenotype_file_name, groups=None, gene_filter_file_name="protein_coding.txt", rounds=2, recursion_step_size=20, start_index = 0, recursion_number_of_steps=1, feature_selection_method ="rfe", score_method="average_precision", target_genes_subset = None, batches=None, epochs = None):
 
-    genelist_datasets, labels, gene_ids = load_data(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None)
+    genelist_datasets, labels, gene_ids = load_data(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, groups=groups)
     if epochs is None:
         epochs=1
         batches= len(gene_ids)

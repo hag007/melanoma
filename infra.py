@@ -176,9 +176,9 @@ def divided_patient_ids_by_label_old(phenotype_list_file_name, phenotype_list_pa
 #     return map
 
 # load expression profile filtered by an external genes list and divided according tumor type label
-def load_expression_profile_by_labelling(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_path=None, groups=None):
+def load_expression_profile_by_labelling(gene_list_file_name, gene_expression_file_name, phenotype_file_name, label=None, label_values=None, gene_filter_file_name=None, tested_gene_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_path=None, groups=None):
 
-    expression_profiles_formatted = load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path)
+    expression_profiles_formatted = load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=tested_gene_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path)
     patients_by_labeling = divided_patient_ids_by_label(phenotype_file_name, phenotype_path, label, label_values, groups)
 
     expression_profiles_by_labeling = []
@@ -353,9 +353,9 @@ def filter_top_var_genes(tested_gene_expression, tested_gene_expression_headers_
     row_var_th = row_var_sorted[var_th_index]
     row_var_masked_indices = np.where(row_var_th > row_var)[0]
     gene_expression_top_var = np.delete(tested_gene_expression, row_var_masked_indices, axis=0)
-    gene_expression_top_var_headers_rows = np.delete(tested_gene_expression_headers_columns, row_var_masked_indices,
+    gene_expression_top_var_headers_columns = np.delete(tested_gene_expression_headers_rows, row_var_masked_indices,
                                                      axis=0)
-    gene_expression_top_var_headers_columns = tested_gene_expression_headers_rows
+    gene_expression_top_var_headers_rows = tested_gene_expression_headers_columns
     gene_expression_top_var = np.rot90(np.flip(gene_expression_top_var, 1), k=-1, axes=(1, 0))
 
     return gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns
