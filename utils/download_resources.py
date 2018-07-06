@@ -28,7 +28,7 @@ def download(link, dir_name):
             sys.stdout.write("\r\n")
 
 def main():
-    list_of_files_format = ["TCGA-{}.htseq_counts.tsv.gz","TCGA-{}.htseq_fpkm.tsv.gz","TCGA-{}.htseq_fpkm-uq.tsv.gz","TCGA-{}.GDC_phenotype.tsv.gz","TCGA-{}.survival.tsv.gz","TCGA-{}.mutect2_snv.tsv.gz"]
+    list_of_files_format = ["TCGA-{}.htseq_counts.tsv.gz","TCGA-{}.htseq_fpkm.tsv.gz","TCGA-{}.htseq_fpkm-uq.tsv.gz","TCGA-{}.GDC_phenotype.tsv.gz","TCGA-{}.survival.tsv.gz","TCGA-{}.mutect2_snv.tsv.gz", "TCGA-{}.mirna.tsv.gz"]
     for cur in constants.ALL_CANCER_TYPES:
         if cur == "PANCAN": continue
         constants.update_dirs(CANCER_TYPE_u=cur)
@@ -52,3 +52,5 @@ def main():
         for cur_file_name in list_of_files:
             if os.path.exists(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur))) and os.path.exists(os.path.join(constants.TCGA_DATA_DIR,".".join(cur_file_name.format(cur).split(".")[:-1]))):
                 os.remove(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur)))
+
+# main()

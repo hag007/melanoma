@@ -3,8 +3,7 @@
   "mutation_binary": {
     "type": "string",
     "value": [
-      "0",
-      "1"
+      "0"
     ]
   }
 }]

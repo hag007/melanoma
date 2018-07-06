@@ -5,7 +5,7 @@ style.use("ggplot")
 import logging
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
-logger.addHandler(sh)
+    logger.addHandler(sh)
 BASE_PROFILE="D:\\omics"
 BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 

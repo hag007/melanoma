@@ -66,6 +66,8 @@ def e2g_convertor(e_ids):
     for cur in e_ids:
         if e2g_dict.has_key(cur.split(".")[0]):
             results.append(e2g_dict[cur.split(".")[0]])
+        else:
+            results.append(cur.split(".")[0])
     return results
 
 

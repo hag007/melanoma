@@ -10,7 +10,7 @@ from infra import *
 
 def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,gene_list_file_name)
+        gene_list_path = os.path.join(constants.DICTIONARIES_DIR,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -68,7 +68,7 @@ for mir_id in mir_ids:
     print "done analyzing {}".format(mir_id)
 
 
-f = open(os.path.join(CACHE_DIR, "mir_cluster_out.txt"), 'w')
+f = open(os.path.join(constants.CACHE_DIR, "mir_cluster_out.txt"), 'w')
 for key, values in mirclusters.iteritems():
     if gene_symbols2ensembl.has_key(key):
         line = gene_symbols2ensembl[key]+"\t"

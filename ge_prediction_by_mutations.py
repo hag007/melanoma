@@ -19,7 +19,7 @@ from utils.clustering import plot_heatmap
 
 # () main
 
-def predict_ge_by_mutation(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, is_unsupervised=True, start_k=2, end_k=2, meta_groups=None, phenotype_labels_heatmap = None, filter_expression=None, integ=False, min_ratio=0.1, omitted_genes=[]):
+def predict_ge_by_mutation(tested_gene_list_file_name, total_gene_list_file_name, gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, gene_filter_file_name=None, tested_gene_list_path=None, total_gene_list_path=None, gene_expression_path=None, phenotype_path=None, gene_filter_file_path=None, var_th_index=None, is_unsupervised=True, start_k=2, end_k=2, meta_groups=None, phenotype_labels_heatmap = None, filter_expression=None, integ=False, min_ratio=0.1 , included_mutation_gene_list=None, excluded_mutation_gene_list=None):
 
 
     integ_data = load_integrated_mutation_data(
@@ -53,9 +53,16 @@ def predict_ge_by_mutation(tested_gene_list_file_name, total_gene_list_file_name
     print stopwatch.stop("end mut")
     all_mutated_vectors[all_mutated_vectors>5] =5
 
-    for cur in omitted_genes:
-        all_mutated_vectors = all_mutated_vectors[:,all_mutated_genes!=cur ]
-        all_mutated_genes = all_mutated_genes[all_mutated_genes!=cur ]
+    if included_mutation_gene_list is not None:
+        included_mutation_gene = load_gene_list(included_mutation_gene_list)
+        all_mutated_vectors = all_mutated_vectors[:, np.in1d(all_mutated_genes,included_mutation_gene)]
+        all_mutated_genes = all_mutated_genes[np.in1d(all_mutated_genes,included_mutation_gene)]
+
+    if excluded_mutation_gene_list is not None:
+        excluded_mutation_gene = load_gene_list(excluded_mutation_gene_list)
+        for cur in excluded_mutation_gene:
+            all_mutated_vectors = all_mutated_vectors[:,all_mutated_genes!=cur ]
+            all_mutated_genes = all_mutated_genes[all_mutated_genes!=cur ]
 
     all_mutated_vectors[all_mutated_vectors > 5] = 5
     all_mutated_genes = all_mutated_genes[(all_mutated_vectors != 0).sum(axis=0) > np.shape(all_mutated_vectors)[0] * min_ratio]

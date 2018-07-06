@@ -33,6 +33,14 @@ def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.hts
     f.close()
     return lines
 
+def load_dictionary(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.htseq_counts.tsv"
+    if gene_list_path == None:
+        gene_list_path = os.path.join(constants.DICTIONARIES_DIR,gene_list_file_name)
+    f = open(gene_list_path,'r')
+    lines = [l.strip().split() for l in f]
+    f.close()
+    return lines
+
 # return gene expression table filtered according an external list with proper orientation (0 degree angle according genes, 90 degree angle according patients)
 def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None ,by_gene=False):
     stopwatch = Stopwatch()
@@ -260,7 +268,7 @@ def load_integrated_mutation_data(mutation_file_name,
         return None
 
     if filter_expression is not None:
-        filtered_patients = divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression)[0]
+        filtered_patients =[ y for x in divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression) for y in x]
         print "number of filtered patients from phenotypes: {}".format(len(filtered_patients))
     else:
         filtered_patients = np.append(mutation_dataset[1:,0], survival_dataset[1:, 0])
@@ -311,7 +319,7 @@ def load_integrated_ge_data(tested_gene_list_file_name, total_gene_list_file_nam
         return None
 
     if filter_expression is not None:
-        filtered_patients = divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression)[0]
+        filtered_patients = [y for x in divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression) for y in x]
         print "number of filtered patients from phenotypes: {}".format(len(filtered_patients))
     else:
         filtered_patients = np.append(tested_gene_expression[0, 1:], survival_dataset[1:, 0])

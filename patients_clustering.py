@@ -28,7 +28,7 @@ def find_clusters_and_survival(tested_gene_list_file_name, total_gene_list_file_
         return
     gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns, labels_assignment, survival_dataset = data
 
-    plot_genes_statistic(gene_expression_top_var, gene_expression_top_var_headers_columns, tested_gene_list_file_name)
+    # plot_genes_statistic(gene_expression_top_var, gene_expression_top_var_headers_columns, tested_gene_list_file_name)
 
     if is_unsupervised:
         clfs_results = find_clusters(end_k, gene_expression_top_var, gene_expression_top_var_headers_rows,

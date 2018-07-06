@@ -40,6 +40,7 @@ from constants import *
 #from clusters_similarity import *
 from significant_enrichment import *
 from gene_sets_correlation import *
+from genes_correlation import find_genes_correlations
 from gene_sets_overlapping import *
 #from svm import *
 import fre
@@ -64,15 +65,17 @@ from mutations_pca_by_samples import plot_pca_by_samples
 
 # dataset = "UVM"
 # data_normalizaton = "fpkm"
-# tested_gene_file_name = "warburg.txt"
-# total_gene_file_name = "protein_coding.txt"
-# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# tested_gene_file_name = "mir_total.txt"
+# total_gene_file_name = "mir_total.txt"
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, mirna_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
 # constants.update_dirs(CANCER_TYPE_u=dataset)
-# groups = json.load(file("groups/mutation_cluster.json"))
+# groups_name = "mutation_binary"
+# groups = json.load(file("groups/{}.json".format(groups_name)))
 # N=19976
 # B = 13
+# pval_preprocessing_file_name = "pvals_{}_{}_{}.txt".format(total_gene_file_name.split(".")[0], data_normalizaton, groups_name)
 # hgt_preprocessing_file_name = "HGTs_out_19976_{}.npy".format(B)
-# find_expression_significance(tested_gene_file_name=tested_gene_file_name, total_gene_file_name=total_gene_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, groups=groups, hgt_preprocessing_file_name = hgt_preprocessing_file_name, pval_preprocessing_file_name = "pvals_protein_coding.txt", N=N, B = B)
+# find_expression_significance(tested_gene_file_name=tested_gene_file_name, total_gene_file_name=total_gene_file_name, gene_expression_file_name=mirna_file_name, phenotype_file_name=phenotype_file_name, groups=groups, hgt_preprocessing_file_name = hgt_preprocessing_file_name, pval_preprocessing_file_name = pval_preprocessing_file_name, N=N, B = B)
 
 
 ######## RFE ###############
@@ -125,6 +128,39 @@ from mutations_pca_by_samples import plot_pca_by_samples
 # find_sets_correlations(tested_gene_list_file_name=["mito.txt", "glycolysis_go.txt", "warburg_high.txt", "warburg_low.txt", "ldha_singular.txt"],
 #                        total_gene_list_file_name="protein_coding.txt", gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name)
 
+##################### GENES CORRELATION ################
+
+dataset = "UVM"
+constants.update_dirs(CANCER_TYPE_u=dataset)
+data_normalizaton = "fpkm"
+gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, mirna_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+filter_expression = None
+# filter_expression = json.load(file("filters/mutation_binary_1.json"))
+intersection_gene_file_names= ["warburg.txt", "glycolysis_go.txt"]
+mir_total_list = load_dictionary("mir_to_mrna.txt")
+output_f = open(os.path.join(constants.OUTPUT_DIR,"mir_HG_{}.txt".format(time.time())), "w+")
+counter = 0
+for cur_mir in mir_total_list:
+    print "current mir: {}",format(cur_mir[0])
+    with file(os.path.join(constants.LIST_DIR, "dummy_mir.txt"),"w+") as f:
+        f.write(cur_mir[0])
+    with file(os.path.join(constants.LIST_DIR, "dummy_genes.txt"), "w+") as f:
+        f.write("\r\n".join(cur_mir[1:]))
+
+    tested_gene_list_file_names=["dummy_genes.txt", "dummy_mir.txt"]
+    var_th_index=None
+    gene_expression_file_names = [gene_expression_file_name, mirna_file_name]
+
+    output_f.write(load_gene_list("dummy_mir.txt")[0]+ "\t")
+    data_output, hg_output = find_genes_correlations(tested_gene_list_file_names=tested_gene_list_file_names,
+                        gene_expression_file_names=gene_expression_file_names, intersection_gene_file_names=intersection_gene_file_names, phenotype_file_name=phenotype_file_name, filter_expression=filter_expression, var_th_index=var_th_index)
+    output_f.write("\t".join([str(x) for x in hg_output])+"\r\n")
+    counter +=1
+    # if counter ==2:
+    #     break
+output_f.close()
+
+
 
 ##################### HG ENRICHMENT #########################
 
@@ -156,7 +192,18 @@ from mutations_pca_by_samples import plot_pca_by_samples
 
 ##################### CLUSTERS AND ENRICHMENT ################
 
-# find_clusters_and_go_enrichment(tested_gene_list_file_name="rfe1000.txt", total_gene_list_file_name="protein_coding_long.txt", gene_expression_file_name="TCGA-SKCM.htseq_counts.tsv", phenotype_file_name="TCGA-SKCM.GDC_phenotype.tsv", var_th_index=None, start_k=2, end_k=6)
+# tested_gene_list_file_name="proliferation_invasion.txt"
+# total_gene_list_file_name="protein_coding_long.txt"
+# var_th_index=None
+# start_k=2
+# end_k=2
+# dataset="SKCM"
+# data_normalizaton="fpkm"
+# constants.update_dirs(CANCER_TYPE_u=dataset)
+# calc_go=False
+# enrichment_list_file_names = ["invasion.txt", "proliferation.txt", "proliferation_invasion.txt"]
+# gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, mirna_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+# find_clusters_and_gene_enrichment(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, var_th_index=var_th_index, start_k=start_k, end_k=end_k, calc_go=calc_go, enrichment_list_file_names = enrichment_list_file_names)
 
 ##################### CLUSTERS AND SURVIVAL ################
 
@@ -324,39 +371,42 @@ from mutations_pca_by_samples import plot_pca_by_samples
 
 
 ############ PREDICTION_BY_MUTATION ###################
-
-for dataset in ["UVM"]:
-    if dataset == "PANCAN": continue
-    meta_groups = None
-    # meta_groups= [json.load(file("groups/mutation_binary.json"))]
-
-    constants.update_dirs(CANCER_TYPE_u=dataset)
-    data_normalizaton = "fpkm"
-    gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
-    random_set_file_name = generate_random_set(random_size=25, meta_gene_set="protein_coding_long.txt")
-    tested_gene_list_file_name= "warburg_low.txt" # random_set_file_name #
-    total_gene_list_file_name="protein_coding_long.txt"
-    var_th_index=None
-    is_unsupervised=True
-    integ=False
-    start_k=2
-    end_k=2
-    min_ratio = 0.2
-    omitted_genes = [] # ["TTN", "BRAF", "GNAQ", "GNA11"]
-    filter_expression = None
-    d_codes = []
-    # if meta_groups is not None:
-    #     for cur in meta_groups[0]:
-    #         d_codes.append(cur["tumor_stage.diagnoses"]["value"][0])
-    # , "person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}
-
-    # for cur_tt in ["Primary Tumor"]:
-    filter_expression = None # [json.load(file("filters/mutation_binary.json"))]
-    print "process {}".format(dataset)
-    phenotype_labels_heatmap = None#["breslow_depth_value"]
-    # find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups)
-    predict_ge_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, phenotype_labels_heatmap=phenotype_labels_heatmap, integ=integ, min_ratio=min_ratio, omitted_genes=omitted_genes)
-    #cluster_patients_filtered_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, integ=True ,min_ratio=0.4)
+# # for cur_suffix in ["gt","gly","lac","tca"]:
+# #     for cur_dir in ["high","low"]:
+# for dataset in ["UVM"]:
+#     if dataset == "PANCAN": continue
+#     meta_groups = None
+#     meta_groups=[json.load(file("groups/mutation_binary.json"))]
+#
+#     constants.update_dirs(CANCER_TYPE_u=dataset)
+#     data_normalizaton = "fpkm"
+#     gene_expression_file_name, phenotype_file_name, survival_file_name, mutation_file_name, mirna_file_name, pval_preprocessing_file_name = build_gdc_params(dataset=dataset, data_normalizaton=data_normalizaton)
+#     random_set_file_name = generate_random_set(random_size=1, meta_gene_set="mir_total.txt")
+#     tested_gene_list_file_name=  "mir-210.txt" # ""mir_warburg_{}_{}.txt".format(cur_dir, cur_suffix) # random_set_file_name #
+#     total_gene_list_file_name=None # "protein_coding_long.txt"
+#     var_th_index= None # 70
+#     is_unsupervised=True
+#     integ=False
+#     start_k=2
+#     end_k=2
+#     min_ratio = 0.01
+#     excluded_mutation_gene_list = None # ["TTN", "BRAF", "GNAQ", "GNA11"]
+#     included_mutation_gene_list = "uvm_mutations.txt"
+#
+#     d_codes = []
+#     # if meta_groups is not None:
+#     #     for cur in meta_groups[0]:
+#     #         d_codes.append(cur["tumor_stage.diagnoses"]["value"][0])
+#     # , "person_neoplasm_cancer_status" : {"type": "string", "value" : ["WITH TUMOR"]}
+#
+#     # for cur_tt in ["Primary Tumor"]:
+#     filter_expression = None
+#     filter_expression =  json.load(file("filters/mutation_binary.json"))
+#     print "process {}".format(dataset)
+#     phenotype_labels_heatmap = None#["breslow_depth_value"]
+#     find_clusters_and_survival(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=mirna_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups)
+#     # predict_ge_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, phenotype_labels_heatmap=phenotype_labels_heatmap, integ=integ, min_ratio=min_ratio, included_mutation_gene_list=included_mutation_gene_list, excluded_mutation_gene_list=excluded_mutation_gene_list)
+#     #cluster_patients_filtered_by_mutation(tested_gene_list_file_name=tested_gene_list_file_name, total_gene_list_file_name=total_gene_list_file_name, gene_expression_file_name=gene_expression_file_name, phenotype_file_name=phenotype_file_name, survival_file_name=survival_file_name, mutation_file_name=mutation_file_name, var_th_index=var_th_index, is_unsupervised=is_unsupervised, start_k=start_k, end_k=end_k, filter_expression= filter_expression, meta_groups = meta_groups, integ=True ,min_ratio=0.4)
 
 ############ mutation PCA ##################
 

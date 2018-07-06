@@ -84,7 +84,8 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_column
         label.set_fontsize(7)
     data = ax1.imshow(gene_expression_top_var[cluster_labels.argsort(), :], cmap='jet', aspect='auto')
     cb = plt.colorbar(data, ax=axes, fraction=0.05, pad=0.04)
-    # plt.clim(np.min(gene_expression_top_var),np.max(gene_expression_top_var))
+    interval = abs(np.min(gene_expression_top_var) - np.max(gene_expression_top_var))*0.3
+    data.set_clim(np.percentile(gene_expression_top_var,20) + interval, np.percentile(gene_expression_top_var,80) - interval)
     plt.savefig(os.path.join(constants.BASE_PROFILE, "output",
                              "heatmap_cluster_by_p_{}_{}_k={}_label_i={}_{}.png".format(constants.CANCER_TYPE,
                                                                           tested_gene_list_file_name.split(".")[0],
