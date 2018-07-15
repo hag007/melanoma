@@ -32,6 +32,7 @@ from goatools.associations import read_ncbi_gene2go
 from utils.clustering import plot_heatmap, find_clusters
 from utils.ensembl2gene_symbol import e2g_convertor
 from scipy.stats import rankdata
+from utils.kmeans import kmeanssample
 # from goatools.associations import read_gaf
 ############################ () cluster and enrichment #############################
 
@@ -45,6 +46,7 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
     tested_gene_expression = load_gene_expression_profile_by_genes(tested_gene_list_file_name, gene_expression_file_name, gene_filter_file_name, tested_gene_list_path, gene_expression_path, gene_filter_file_path)
     tested_gene_expression_headers_rows, tested_gene_expression_headers_columns, tested_gene_expression = separate_headers(tested_gene_expression)
     total_gene_list = load_gene_list(total_gene_list_file_name)
+    tested_gene_list = load_gene_list(tested_gene_list_file_name)
     row_var = np.var(tested_gene_expression,axis=1)
     row_var_sorted = np.sort(row_var)[::-1]
 
@@ -53,8 +55,8 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
         for cur in enrichment_list_file_names:
             enrichment_lists.append(load_gene_list(cur))
 
-    if var_th_index is not None:
-        var_th_index = len(row_var_sorted)
+    if var_th_index is None:
+        var_th_index = len(row_var_sorted) - 1
     row_var_th = row_var_sorted[var_th_index]
     row_var_masked_indices = np.where(row_var_th >= row_var)[0]
     gene_expression_top_var = np.delete(tested_gene_expression, row_var_masked_indices, axis=0)
@@ -64,13 +66,13 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
     clfs_results = {}
     output_rows = []
     if calc_go:
-        if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME)):
-            wget.download(constants.GO_OBO_URL, os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
+        if not os.path.exists(os.path.join(constants.GO, constants.GO_FILE_NAME)):
+            wget.download(constants.GO_OBO_URL, os.path.join(constants.GO, constants.GO_FILE_NAME))
         # if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR, 'goa_human.gaf')):
         #     wget.download(go_obo_url, os.path.join(constants.TCGA_DATA_DIR, 'goa_human.gaf'))
-        obo_dag = GODag(os.path.join(constants.TCGA_DATA_DIR, constants.GO_FILE_NAME))
+        obo_dag = GODag(os.path.join(constants.GO, constants.GO_FILE_NAME))
 
-        assoc = read_ncbi_gene2go(os.path.join(constants.TCGA_DATA_DIR, constants.GO_ASSOCIATION_FILE_NAME), no_top=True)
+        assoc = read_ncbi_gene2go(os.path.join(constants.GO_DIR, constants.GO_ASSOCIATION_FILE_NAME), no_top=True)
         g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_list)],
                               assoc, obo_dag, methods=["bonferroni", "fdr_bh"])
         g_res = g.run_study([int(cur) for cur in ensembl2entrez_convertor(gene_expression_top_var_header_rows)])
@@ -80,19 +82,19 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
 
     for n_clusters in range(start_k,end_k+1):
         clfs_results[n_clusters] = []
-        km_clf = KMeans(n_clusters).fit(gene_expression_top_var)
+        centres, km_clf, dist = kmeanssample(X=gene_expression_top_var, k=n_clusters, metric="euclidean")
         for i in range(n_clusters):
 
             ranks = []
             for j in range(n_clusters):
-                ranks.append(np.average(np.delete(gene_expression_top_var, np.where(km_clf.labels_ != j)[0], axis=0)))
+                ranks.append(np.average(np.delete(gene_expression_top_var, np.where(km_clf != j)[0], axis=0)))
             ranks = rankdata(ranks)
-            cluster_labels = np.array(km_clf.labels_)
+            cluster_labels = np.array(km_clf)
             for j in range(n_clusters):
-                cluster_labels[np.where(km_clf.labels_ == ranks[j] - 1)] = j
+                cluster_labels[np.where(km_clf == ranks[j] - 1)] = j
             labels_assignment = [cluster_labels + 1]
 
-            cluster_indices = np.where(km_clf.labels_!=i)[0]
+            cluster_indices = np.where(km_clf!=i)[0]
             gene_expression_cluster = np.delete(gene_expression_top_var_header_rows, cluster_indices, axis=0)
             gene_headers_row_cluster = np.delete(gene_expression_top_var_header_rows, cluster_indices, axis=0)
             clfs_results[n_clusters].append((gene_headers_row_cluster, gene_headers_row_cluster))
@@ -114,7 +116,7 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
             if len(enrichment_lists) != 0:
                 for j, cur in enumerate(enrichment_lists):
                     go_terms.append(enrichment_list_file_names[j].split(".")[0])
-                    uncorrectd_pvals.append(calc_HG_test(total_gene_list, cur, [x.split(".")[0] for x in gene_headers_row_cluster]))
+                    uncorrectd_pvals.append(calc_HG_test([x.split(".")[0] for x in tested_gene_list], [x.split(".")[0] for x in cur], [x.split(".")[0] for x in gene_headers_row_cluster]))
                     FDRs.append(".")
                     go_names.append(".")
                     go_ns.append(".")
@@ -125,9 +127,9 @@ def find_clusters_and_gene_enrichment(tested_gene_list_file_name, total_gene_lis
         find_clusters(end_k, np.rot90(np.flip(gene_expression_top_var[cluster_labels.argsort(), :], 1), k=-1, axes=(1, 0)), gene_expression_top_var_header_columns,
                       start_k, e2g_convertor(gene_expression_top_var_header_rows),
                       tested_gene_list_file_name)
-        plot_heatmap(gene_expression_top_var, gene_expression_top_var_header_columns, labels_assignment,
-                     gene_expression_top_var_header_rows, tested_gene_list_file_name, n_clusters=None,
-                     label_index=None, phenotype_heatmap=None)
+        # plot_heatmap(gene_expression_top_var, gene_expression_top_var_header_columns, labels_assignment,
+        #              gene_expression_top_var_header_rows, tested_gene_list_file_name, n_clusters=None,
+        #              label_index=None, phenotype_heatmap=None)
 
     print_to_excel(output_rows=output_rows, gene_list_file_name=tested_gene_list_file_name.split(".")[0], gene_expression_file_name=gene_expression_file_name.split(".")[0], var_th_index=var_th_index)
 

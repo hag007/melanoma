@@ -42,6 +42,7 @@ def check_group_enrichment(tested_gene_file_name, total_gene_file_name):
                 shutil.copyfileobj(f_in, f_out)
 
     assoc = read_ncbi_gene2go(os.path.join(constants.GO_DIR, constants.GO_ASSOCIATION_FILE_NAME), no_top=True)
+
     g = GOEnrichmentStudy([int(cur) for cur in ensembl2entrez_convertor(total_gene_list)],
                           assoc, obo_dag, methods=["bonferroni", "fdr_bh"])
     g_res = g.run_study([int(cur) for cur in ensembl2entrez_convertor(tested_gene)])

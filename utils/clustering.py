@@ -3,25 +3,26 @@ import numpy as np
 from scipy.stats import rankdata
 import matplotlib.pyplot as plt
 import os
+from utils.kmeans import kmeanssample
 import constants
 import time
 from utils.ensembl2gene_symbol import e2g_convertor
 
 
 def find_clusters(end_k, gene_expression_top_var, gene_expression_top_var_headers_rows, start_k,
-                gene_expression_top_var_headers_columns, tested_gene_list_file_name, labels_assignment=None, phenotype_heatmap=None):
+                gene_expression_top_var_headers_columns, tested_gene_list_file_name, labels_assignment=None, phenotype_heatmap=None, clustering_algorithm="euclidean"):
     clfs_results = {}
     for n_clusters in range(start_k, end_k + 1):
         clfs_results[n_clusters] = []
 
-        km_clf = KMeans(n_clusters).fit(gene_expression_top_var)
+        centres, km_clf, dist = kmeanssample(k=n_clusters, X=gene_expression_top_var, metric=clustering_algorithm)
         ranks = []
         for i in range(n_clusters):
-            ranks.append(np.average(np.delete(gene_expression_top_var, np.where(km_clf.labels_ != i)[0], axis=0)))
+            ranks.append(np.average(np.delete(gene_expression_top_var, np.where(km_clf != i)[0], axis=0)))
         ranks = rankdata(ranks)
-        cluster_labels = np.array(km_clf.labels_)
+        cluster_labels = np.array(km_clf)
         for i in range(n_clusters):
-            cluster_labels[np.where(km_clf.labels_ == ranks[i] - 1)] = i
+            cluster_labels[np.where(km_clf == ranks[i] - 1)] = i
         if labels_assignment is not None:
             labels_assignment = [cluster_labels + 1] + labels_assignment
         else:
@@ -84,8 +85,8 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_column
         label.set_fontsize(7)
     data = ax1.imshow(gene_expression_top_var[cluster_labels.argsort(), :], cmap='jet', aspect='auto')
     cb = plt.colorbar(data, ax=axes, fraction=0.05, pad=0.04)
-    interval = abs(np.min(gene_expression_top_var) - np.max(gene_expression_top_var))*0.3
-    data.set_clim(np.percentile(gene_expression_top_var,20) + interval, np.percentile(gene_expression_top_var,80) - interval)
+    interval = 0 # abs(np.min(gene_expression_top_var) - np.max(gene_expression_top_var))*0.3
+    data.set_clim(np.percentile(gene_expression_top_var,5) , np.percentile(gene_expression_top_var,90) ) # - interval
     plt.savefig(os.path.join(constants.BASE_PROFILE, "output",
                              "heatmap_cluster_by_p_{}_{}_k={}_label_i={}_{}.png".format(constants.CANCER_TYPE,
                                                                           tested_gene_list_file_name.split(".")[0],

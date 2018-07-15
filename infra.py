@@ -42,10 +42,13 @@ def load_dictionary(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.ht
     return lines
 
 # return gene expression table filtered according an external list with proper orientation (0 degree angle according genes, 90 degree angle according patients)
-def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None ,by_gene=False):
+def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None ,by_gene=False, list_mode = "FROM_DISK"):
     stopwatch = Stopwatch()
     stopwatch.start()
-    gene_list = load_gene_list(gene_list_file_name=gene_list_file_name, gene_list_path=gene_list_path)
+    if list_mode == "ON_THE_FLY":
+        gene_list = gene_list_file_name
+    else:
+        gene_list = load_gene_list(gene_list_file_name=gene_list_file_name, gene_list_path=gene_list_path)
     gene_list = [l.split(".")[0] for i, l in enumerate(gene_list)]
     print stopwatch.stop("done loading gene list")
     # random.shuffle(gene_list)
@@ -72,11 +75,11 @@ def load_gene_expression_profile(gene_list_file_name, gene_expression_file_name,
     return expression_profiles_filtered
 
 
-def load_gene_expression_profile_by_genes(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None):
-    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, by_gene=True)
+def load_gene_expression_profile_by_genes(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, list_mode="FROM_DISK"):
+    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path, by_gene=True, list_mode=list_mode)
 
-def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None):
-    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path,by_gene=False)
+def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expression_file_name, gene_filter_file_name=None, gene_list_path=None, gene_expression_path=None, gene_filter_path=None, list_mode="FROM_DISK"):
+    return load_gene_expression_profile(gene_list_file_name=gene_list_file_name, gene_expression_file_name=gene_expression_file_name, gene_filter_file_name=gene_filter_file_name, gene_list_path=gene_list_path, gene_expression_path=gene_expression_path, gene_filter_path=gene_filter_path,by_gene=False, list_mode=list_mode)
 
 
 def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):

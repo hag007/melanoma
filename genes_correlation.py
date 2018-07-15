@@ -14,6 +14,7 @@ from constants import *
 from infra import *
 from scipy.stats import pearsonr
 from utils.ensembl2gene_symbol import e2g_convertor
+from utils.ensembl2gene_symbol import g2e_convertor
 from openpyxl import Workbook
 from openpyxl.styles import Color, PatternFill, Font, Border, Side, Alignment
 from utils.hg_test import calc_HG_test
@@ -21,18 +22,24 @@ from utils.hg_test import calc_HG_test
 
 
 # () main
-def find_genes_correlations(tested_gene_list_file_names, gene_expression_file_names, intersection_gene_file_names, phenotype_file_name = None, filter_expression=None, var_th_index=None):
+def find_genes_correlations(tested_gene_list_file_names, total_gene_list_file_name, gene_expression_file_names, intersection_gene_file_names, phenotype_file_name = None, filter_expression=None, var_th_index=None, list_mode="ON_THE_FLY"):
     if filter_expression is not None:
         filtered_patients = [y for x in divided_patient_ids_by_label(phenotype_file_name, groups=filter_expression) for y in x]
-    print "about ot analyse: {}".format(tested_gene_list_file_names)
+    print "about ot analyse: {}".format(str(tested_gene_list_file_names)[:20])
     # fetch gene expression by gene_id, divided by tumor type
     gene_sets = []
     expression_sets = []
 
-    intersection_gene_sets = []
-    if intersection_gene_file_names is not None:
-        intersection_gene_sets = [np.array(e2g_convertor(load_gene_list(x))) if type(x) == str else np.array(e2g_convertor(x)) for x in intersection_gene_file_names]
-    all_gene_expressions = [np.array(load_gene_expression_profile_by_genes(x, gene_expression_file_names[i])) for i, x in enumerate(tested_gene_list_file_names)]
+    if list_mode == "ON_THE_FLY":
+        total_gene_list = total_gene_list_file_name
+        intersection_gene_sets = intersection_gene_file_names
+    else:
+        total_gene_list = load_gene_list(total_gene_list_file_name)
+        intersection_gene_sets = []
+        if intersection_gene_file_names is not None:
+            intersection_gene_sets = [np.array([y.split(".")[0] for y in load_gene_list(x)]) if type(x) == str else [y.split(".")[0] for y in x] for x in intersection_gene_file_names]
+
+    all_gene_expressions = [np.array(load_gene_expression_profile_by_genes(x, gene_expression_file_names[i], list_mode = list_mode)) for i, x in enumerate(tested_gene_list_file_names)]
     if filter_expression is None:
         filtered_patients = np.append(all_gene_expressions[1:], all_gene_expressions[1:])
     mutual_patients = np.array([x for x in all_gene_expressions[0][0][1:] if x in all_gene_expressions[1][0][1:] and x in filtered_patients])
@@ -60,21 +67,24 @@ def find_genes_correlations(tested_gene_list_file_names, gene_expression_file_na
     for i, cur_1 in enumerate(all_gene_expressions_1):
         for j, cur_2 in enumerate(all_gene_expressions_2):
             prsn = pearsonr(cur_1[1], cur_2[1])
-            # if not math.isnan(pearsonr(cur_1[1], cur_2[1])[0]):
-            output.append([e2g_convertor([all_gene_expressions_1[i][0]])[0], prsn[0], prsn[1]])
+            if not math.isnan(pearsonr(cur_1[1], cur_2[1])[0]):
+                output.append([e2g_convertor([all_gene_expressions_1[i][0]])[0], prsn[0], prsn[1]])
 
+    if len(output) == 0:
+        return ([], [1.0 for x in intersection_gene_file_names])
     output = np.array(output)
     fdr_results = fdrcorrection0(output[:,2].astype(np.float32), alpha=0.05, method='indep', is_sorted=False)
     output = np.c_[output, fdr_results[1]]
-    output = output[output[:,3].argsort(),:]
+    output = output[output[:,3].astype(np.float64).argsort(),:]
 
     hg_scores = []
     for cur_set in intersection_gene_sets:
-        hg_score = calc_HG_test(total_gene_list_N=all_gene_expressions_1, tests_gene_list_B=cur_set, total_gene_list_n=output[output[:, 3].astype(np.float)  < 0.05, 0])
+        # hg_score = calc_HG_test(total_gene_list_N=[x[0].split(".")[0] for x in all_gene_expressions_1], tests_gene_list_B=cur_set, total_gene_list_n=g2e_convertor(output[np.logical_and(output[:, 3].astype(np.float)  < 0.05, output[:, 1].astype(np.float)  < 0)  , 0]))
+        hg_score = calc_HG_test(total_gene_list_N=[x.split(".")[0] for x in total_gene_list], tests_gene_list_B=cur_set, total_gene_list_n=g2e_convertor(output[np.logical_and(output[:, 3].astype(np.float)  < 0.05, output[:, 1].astype(np.float)  < 0)  , 0]))
         print hg_score
         hg_scores.append(hg_score)
 
-    print_to_excel(header_columns, output, intersection_gene_sets, intersection_gene_file_names, "_".join([x.split(".")[0] for x in tested_gene_list_file_names]))
+    # print_to_excel(header_columns, output, intersection_gene_sets, intersection_gene_file_names, "_".join([x.split(".")[0] for x in tested_gene_list_file_names]))
     return (output, hg_scores)
 def print_to_excel(header_columns, data, intersection_gene_sets, intersection_gene_file_names, excel_name):
     wb = Workbook()#ffff00

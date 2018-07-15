@@ -50,38 +50,39 @@ def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-T
     f.close()
     return lines
 
-gene_file_name = "mir-21-3p_targets_gene_symbols.txt"
-lines = load_gene_list(gene_file_name)
-lines_uppered = []
-for i, cur in enumerate(lines):
-    lines[i] = lines[i].upper()
-
 lines_dict = load_gene_dictionary("ensembl2gene_symbol.txt")
-
-
-print "genes list size: {}".format(len(lines))
-print "dict genes size: {}".format(len(lines_dict))
-included_genes_gs = []
-included_genes = []
-for cur in lines_dict[1:]:
-    splited_line = cur.split()
-    if splited_line[0].find('.') > 0:
-        limit = splited_line[0].find('.')
-    else:
-        limit = len(splited_line[0])
-    if splited_line[1].upper() in lines:
-        included_genes.append(splited_line[0][:limit])
-        included_genes_gs.append(splited_line[1].upper())
-for cur in included_genes:
-    print cur
+for gene_file_name in ["uvm_mito_inner_membrane_gene_symbols.txt", "uvm_mito_membrane_gene_symbols.txt", "uvm_mito_protein_complex_gene_symbols.txt", "uvm_mito_matrix_gene_symbols.txt", "uvm_mitochondrion_gene_symbols.txt"]:
+    lines = load_gene_list(gene_file_name)
+    lines_uppered = []
+    for i, cur in enumerate(lines):
+        lines[i] = lines[i].upper()
 
 
 
-f = file(os.path.join(constants.LIST_DIR, gene_file_name[:gene_file_name.index("_gene_symbols")]+".txt"), "w+")
-f.writelines('\n'.join(included_genes))
-print "total:{}".format(len(included_genes))
 
-print "not included ({}):".format(len([x for x in lines if x not in included_genes_gs]))
-for cur in [x for x in lines if x not in included_genes_gs]:
-    print cur
+    print "genes list size: {}".format(len(lines))
+    print "dict genes size: {}".format(len(lines_dict))
+    included_genes_gs = []
+    included_genes = []
+    for cur in lines_dict[1:]:
+        splited_line = cur.split()
+        if splited_line[0].find('.') > 0:
+            limit = splited_line[0].find('.')
+        else:
+            limit = len(splited_line[0])
+        if splited_line[1].upper() in lines:
+            included_genes.append(splited_line[0][:limit])
+            included_genes_gs.append(splited_line[1].upper())
+    for cur in included_genes:
+        print cur
+
+
+
+    f = file(os.path.join(constants.LIST_DIR, gene_file_name[:gene_file_name.index("_gene_symbols")]+".txt"), "w+")
+    f.writelines('\n'.join(included_genes))
+    print "total:{}".format(len(included_genes))
+
+    print "not included ({}):".format(len([x for x in lines if x not in included_genes_gs]))
+    for cur in [x for x in lines if x not in included_genes_gs]:
+        print cur
 

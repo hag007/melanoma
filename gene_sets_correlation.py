@@ -38,7 +38,7 @@ def find_sets_correlations(tested_gene_list_file_name, total_gene_list_file_name
         output += "\t"+str(cur_1[1])
         for j, cur_2 in enumerate(averaged_expression_sets):
             if j <= i:
-                output += "\t"+str(pearsonr(cur_1[0], cur_2[0])[0])
+                output += "\t"+str(pearsonr(cur_1[0], cur_2[0])[0])+ " " +str(pearsonr(cur_1[0], cur_2[0])[1])
         output += "\n"
 
     f = file(os.path.join(constants.OUTPUT_DIR, "CORRELATIONS_{}_{}.txt".format(gene_expression_file_name.split(".")[0], time.time())), 'w+')
