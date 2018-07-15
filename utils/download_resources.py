@@ -5,7 +5,8 @@ import gzip
 import shutil
 import requests
 import sys
-
+sys.path.insert(0, '../')
+import constants
 
 def download(link, dir_name):
     file_name = os.path.join(dir_name, os.path.basename(link))
@@ -52,5 +53,8 @@ def main():
         for cur_file_name in list_of_files:
             if os.path.exists(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur))) and os.path.exists(os.path.join(constants.TCGA_DATA_DIR,".".join(cur_file_name.format(cur).split(".")[:-1]))):
                 os.remove(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur)))
+
+        if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR,"output")):
+            os.makedirs(os.path.join(dest, "output"))
 
 # main()

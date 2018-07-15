@@ -216,7 +216,7 @@ if __name__ == "__main__":
     """
 
     # for dataset in ["LUSC", "SKCM", "MESO", "OV", "PCPG", "PRAD", "READ", "SARC", "TGCT", "THYM", "THCA", "UCS"]:
-    for dataset in ["COMB"]:
+    for dataset in ["PANCAN"]:
         print "current dataset: {}".format(dataset)
         constants.update_dirs(CANCER_TYPE_u=dataset)
         data_normalizaton = "fpkm"
@@ -225,12 +225,16 @@ if __name__ == "__main__":
 
 
         pheno = pd.read_table(os.path.join(constants.TCGA_DATA_DIR, phenotype_file_name), index_col=0)
+        print "after intersection rows: {}".format(len(list(pheno.index)))
+        pheno = pheno[pheno.batch_number.notnull()]
+        print "after intersection rows: {}".format(len(list(pheno.index)))
+
         dat = pd.read_table(os.path.join(constants.TCGA_DATA_DIR, gene_expression_file_name), index_col=0, dtype="str")
         print "done load"
         dat = dat.astype(np.float)
         print "done conversion"
         dat = dat.loc[~(dat==0).all(axis=1)]
-        pheno = pheno.loc[~(pheno['batch_number'] == "")]
+        pheno = pheno.loc[~(pheno['batch_number'] == "417.32.0")]
 
         ge_patients = list(set(dat.columns.values).intersection(set(pheno.index)))
         dat = dat.loc[:,ge_patients]

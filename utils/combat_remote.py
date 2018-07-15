@@ -232,11 +232,17 @@ if __name__ == "__main__":
         dat = dat.loc[~(dat==0).all(axis=1)]
         pheno = pheno.loc[~(pheno['batch_number'] == "")]
 
+
         ge_patients = list(set(dat.columns.values).intersection(set(pheno.index)))
         dat = dat.loc[:,ge_patients]
+
+
+
         dat = dat.fillna(0)
 
         pheno = pheno.ix[ge_patients]
+
+        print "after intersection: {}".format(list(set(dat.columns.values).intersection(set(pheno.index))))
         # mod = patsy.dmatrix("~ age + cancer", pheno, return_type="dataframe")
         import time
 

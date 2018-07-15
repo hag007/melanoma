@@ -1,5 +1,3 @@
-import Bio.UniProt.GOA as GOA
-# from orangecontrib.bio.go import Ontology
 import wget
 from utils.ensembl2gene_symbol import e2g_convertor
 import time
