@@ -13,6 +13,10 @@ def main():
     dest = constants.BASE_PROFILE
     if not os.path.exists(os.path.join(dest, "output")):
         os.makedirs(os.path.join(dest, "output"))
+    if not os.path.exists(constants.GO_DIR):
+        os.makedirs(constants.GO_DIR)
+    if not os.path.exists(constants.CACHE_GLOBAL_DIR):
+        os.makedirs(constants.CACHE_GLOBAL_DIR)
     sync_from_project()
     download_resources.main()
 

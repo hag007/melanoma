@@ -54,7 +54,11 @@ def main():
             if os.path.exists(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur))) and os.path.exists(os.path.join(constants.TCGA_DATA_DIR,".".join(cur_file_name.format(cur).split(".")[:-1]))):
                 os.remove(os.path.join(constants.TCGA_DATA_DIR,cur_file_name.format(cur)))
 
-        if not os.path.exists(os.path.join(constants.TCGA_DATA_DIR,"output")):
-            os.makedirs(os.path.join(dest, "output"))
+        if not os.path.exists(constants.OUTPUT_DIR):
+            os.makedirs(constants.OUTPUT_DIR)
+
+        if not os.path.exists(constants.CACHE_DIR):
+            os.makedirs(constants.CACHE_DIR)
+
 
 # main()

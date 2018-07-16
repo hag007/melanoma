@@ -1,18 +1,20 @@
 import shutil
 import os
 import json
+import sys
+sys.path.insert(0, '../')
+import constants
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-config_json = json.load("config/conf.json")
 
 def sync_from_project():
-    dest = config_json['BASE_PROFILE']
+    dest = constants.BASE_PROFILE
     source = dir_path
 
 
 def sync_to_project():
     dest = dir_path
-    source = config_json['BASE_PROFILE']
+    source = constants.BASE_PROFILE
 
 
 def replace_folder(source, dest):

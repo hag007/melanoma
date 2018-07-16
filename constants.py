@@ -1,6 +1,6 @@
 import json
 import os
-config_json = json.load("config/conf.json")
+config_json = json.load(file("config/conf.json"))
 
 USE_CACHE = True
 PHENOTYPE_FORMAT = "GDC"
@@ -49,7 +49,7 @@ ON_THE_FLY = "ON_THE_FLY"
 FILTER_KEYWORDS = ["_label", "_name"]
 ALL_CANCER_TYPES = ["ESCA", "LAML", "ACC", "CHOL", "BLCA", "BRCA", "CESC", "COAD", "UCEC", "GBM", "HNSC", "KICH", "KIRC", "KIRP", "DLBC", "LIHC", "LGG", "LUAD", "LUSC", "SKCM", "MESO", "UVM", "PANCAN", "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "STAD", "TGCT", "THYM", "THCA", "UCS"]
 ALL_TUMOR_TYPES = ["Primary Tumor", "Metastatic", "Additional - New Parimary", "Additional Metatatic", "Primary Blood Derived Cancer - Peripheral Blood", "Blood Derived Cancer - Bone Marrow, Post-treatment", "Primary Blood Derived Cancer - Bone Marrow", "Recurrent Blood Derived Cancer - Peripheral Blood", "Recurrent Tumor"]
-def update_dirs(BASE_DIR="D:/omics/", DATASET_DIR=None, DATASET_TYPE_u = "GDC-TCGA", CANCER_TYPE_u = "SKCM"):
+def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_TYPE_u = "GDC-TCGA", CANCER_TYPE_u = "SKCM"):
 
     global BASE_PROFILE
     global CACHE_DIR
