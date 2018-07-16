@@ -2,7 +2,7 @@ import shutil
 import os
 import json
 import sys
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../')
 import constants
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

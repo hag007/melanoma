@@ -4,7 +4,7 @@ import json
 from omics.sync_omics import sync_from_project
 from utils import download_resources
 import sys
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../')
 import constants
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
