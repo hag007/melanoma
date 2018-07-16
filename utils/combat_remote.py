@@ -230,7 +230,8 @@ if __name__ == "__main__":
         dat = dat.astype(np.float)
         print "done conversion"
         dat = dat.loc[~(dat==0).all(axis=1)]
-        pheno = pheno.loc[~(pheno['batch_number'] == "")]
+        pheno = pheno[pheno.batch_number.notnull()]
+
 
 
         ge_patients = list(set(dat.columns.values).intersection(set(pheno.index)))

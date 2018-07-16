@@ -33,7 +33,14 @@ def cox_gene(test_independently, filtered_out, filtered_in, filter_type, filter_
     print "Total n patients in expression after filtering: {}".format(np.shape(gene_expression_dataset)[1]-1)
     dataset_headers_rows, dataset_headers_columns, dataset = separate_headers(gene_expression_dataset)
     gene_expression_top_var, gene_expression_top_var_headers_rows, gene_expression_top_var_headers_columns = filter_top_var_genes(dataset ,dataset_headers_columns, dataset_headers_rows, var_th_index)
-    # gene_expression_dataset = np.rot90(np.flip(gene_expression_dataset, 1), k=-1, axes=(1, 0))
+
+    # flipping
+    tmp=gene_expression_top_var_headers_rows
+    gene_expression_top_var_headers_rows = gene_expression_top_var_headers_columns
+    gene_expression_top_var_headers_columns = tmp
+    gene_expression_top_var = np.rot90(np.flip(gene_expression_top_var, 1), k=-1, axes=(1, 0))
+    #
+
     expression_survival_integrated = {}
     for i, cur_expression in enumerate(gene_expression_top_var):
         expression_survival_integrated[gene_expression_top_var_headers_rows[i]] = cur_expression[:pheno_limit]

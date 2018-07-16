@@ -1,6 +1,8 @@
 import json
 import os
-config_json = json.load(file("config/conf.json"))
+
+PATH_TO_CONF = "env/config/conf.json"
+config_json = json.load(file(PATH_TO_CONF))
 
 USE_CACHE = True
 PHENOTYPE_FORMAT = "GDC"
