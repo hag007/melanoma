@@ -1,8 +1,6 @@
 from main import load_phenotype_data
 from main import load_gene_expression_profile_by_genes
 
-BASE_PROFILE="D:\\omics"
-BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 SEPARATOR = "@%@"
 
 LABEL_ID = "sample_type.samples"

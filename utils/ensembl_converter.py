@@ -26,8 +26,6 @@ import constants
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
 logger.addHandler(sh)
-BASE_PROFILE="D:\\omics"
-BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 
 LABEL_ID = "sample_type.samples"
 PRIMARY_TUMOR = "Primary Tumor"
@@ -36,7 +34,7 @@ METASTATIC = "Metastatic"
 
 def load_gene_list(gene_list_file_name, gene_list_path=None): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,"list","gene_symbols",gene_list_file_name)
+        gene_list_path = os.path.join(constants.LIST_DIR,"gene_symbols",gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -50,7 +48,7 @@ def load_gene_dictionary(gene_list_file_name, gene_list_path=None, source="GDC-T
     f.close()
     return lines
 
-lines_dict = load_gene_dictionary("ensembl2gene_symbol.txt")
+lines_dict = load_gene_dictionary(constants.ENSEMBL_TO_GENE_SYMBOLS)
 for gene_file_name in ["uvm_mito_inner_membrane_gene_symbols.txt", "uvm_mito_membrane_gene_symbols.txt", "uvm_mito_protein_complex_gene_symbols.txt", "uvm_mito_matrix_gene_symbols.txt", "uvm_mitochondrion_gene_symbols.txt"]:
     lines = load_gene_list(gene_file_name)
     lines_uppered = []

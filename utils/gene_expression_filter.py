@@ -3,8 +3,6 @@ from main import load_gene_list
 import numpy as np
 import os
 
-BASE_PROFILE="D:\\omics"
-BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 SEPARATOR = "@%@"
 
 LABEL_ID = "sample_type.samples"

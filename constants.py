@@ -7,13 +7,14 @@ PHENOTYPE_FORMAT = "GDC"
 DATASET_TYPE = "GDC-TCGA"
 CANCER_TYPE = "SKCM"
 BASE_PROFILE= config_json['BASE_PROFILE']
-BASE_DATASET= "{}GDC-TCGA/SKCM/".format(BASE_PROFILE)
-CACHE_DIR = "{}cache/".format(BASE_DATASET)
-DICTIONARIES_DIR = "{}dictionaries/".format(BASE_PROFILE)
-OUTPUT_DIR = "{}output/".format(BASE_DATASET)
-TCGA_DATA_DIR = "{}tcga_data/".format(BASE_DATASET)
-GO_DIR = "{}GO/".format(BASE_PROFILE)
-LIST_DIR = "{}list/".format(BASE_PROFILE)
+BASE_DATASET= os.path.join(BASE_PROFILE, DATASET_TYPE, CANCER_TYPE)
+CACHE_DIR = os.path.join(BASE_DATASET, "cache")
+DICTIONARIES_DIR = os.path.join(BASE_PROFILE, "dictionaries")
+OUTPUT_DIR = os.path.join(BASE_DATASET, "output")
+TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
+GO_DIR = os.path.join(BASE_PROFILE, "GO")
+CACHE_GLOBAL_DIR = os.path.join(CACHE_GLOBAL_DIR, "cache_global")
+LIST_DIR = os.path.join(BASE_PROFILE, "list")
 
 SEPARATOR = "@%@"
 
@@ -61,6 +62,7 @@ def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_
     global DATASET_TYPE
     global BASE_DATASET
     global GO_DIR
+    global CACHE_GLOBAL_DIR
     BASE_PROFILE=BASE_DIR
     DATASET_TYPE = DATASET_TYPE_u
     CANCER_TYPE = CANCER_TYPE_u
@@ -68,11 +70,11 @@ def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_
         DATASET_DIR = "{}/{}/".format(DATASET_TYPE,CANCER_TYPE)
 
     BASE_DATASET= os.path.join(BASE_PROFILE,DATASET_DIR)
-    CACHE_DIR= "{}cache/".format(BASE_DATASET)
-    OUTPUT_DIR = "{}output/".format(BASE_DATASET)
-    LIST_DIR = "{}list/".format(BASE_DIR)
-    TCGA_DATA_DIR = "{}tcga_data/".format(BASE_DATASET)
-    DICTIONARIES_DIR = "{}dictionaries/".format(BASE_DIR)
-    GO_DIR = "{}GO/".format(BASE_DIR)
-
+    CACHE_DIR = os.path.join(BASE_DATASET, "cache")
+    DICTIONARIES_DIR = os.path.join(BASE_PROFILE, "dictionaries")
+    OUTPUT_DIR = os.path.join(BASE_DATASET, "output")
+    TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
+    GO_DIR = os.path.join(BASE_PROFILE, "GO")
+    LIST_DIR = os.path.join(BASE_PROFILE, "list")
+    CACHE_GLOBAL_DIR = os.path.join(CACHE_GLOBAL_DIR, "cache_global")
 update_dirs()

@@ -4,10 +4,9 @@ import os
 style.use("ggplot")
 import logging
 sh = logging.StreamHandler()
+import constants
 logger = logging.getLogger("log")
-    logger.addHandler(sh)
-BASE_PROFILE="D:\\omics"
-BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
+logger.addHandler(sh)
 
 LABEL_ID = "sample_type.samples"
 PRIMARY_TUMOR = "Primary Tumor"
@@ -15,7 +14,7 @@ METASTATIC = "Metastatic"
 
 def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"): #  ="TCGA-SKCM.htseq_counts.tsv"
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,gene_list_file_name)
+        gene_list_path = os.path.join(constants.BASE_PROFILE,source,dataset,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()
@@ -23,7 +22,7 @@ def load_gene_list(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",d
 
 def load_mirna_clusters(gene_list_file_name, gene_list_path=None, source="GDC-TCGA",dataset="melanoma"):
     if gene_list_path == None:
-        gene_list_path = os.path.join(BASE_PROFILE,source,dataset,gene_list_file_name)
+        gene_list_path = os.path.join(constants.BASE_PROFILE,source,dataset,gene_list_file_name)
     f = open(gene_list_path,'r')
     lines = [l.strip() for l in f]
     f.close()

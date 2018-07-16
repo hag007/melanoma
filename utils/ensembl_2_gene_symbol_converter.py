@@ -26,8 +26,6 @@ import constants
 sh = logging.StreamHandler()
 logger = logging.getLogger("log")
 logger.addHandler(sh)
-BASE_PROFILE="D:\\omics"
-BASE_OUTPUT_DIR = "c:\\users\hagai\\desktop\\"
 
 LABEL_ID = "sample_type.samples"
 PRIMARY_TUMOR = "Primary Tumor"
