@@ -13,7 +13,7 @@ DICTIONARIES_DIR = os.path.join(BASE_PROFILE, "dictionaries")
 OUTPUT_DIR = os.path.join(BASE_DATASET, "output")
 TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
 GO_DIR = os.path.join(BASE_PROFILE, "GO")
-CACHE_GLOBAL_DIR = os.path.join(CACHE_GLOBAL_DIR, "cache_global")
+CACHE_GLOBAL_DIR = os.path.join(BASE_PROFILE, "cache_global")
 LIST_DIR = os.path.join(BASE_PROFILE, "list")
 
 SEPARATOR = "@%@"
@@ -76,5 +76,5 @@ def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_
     TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
     GO_DIR = os.path.join(BASE_PROFILE, "GO")
     LIST_DIR = os.path.join(BASE_PROFILE, "list")
-    CACHE_GLOBAL_DIR = os.path.join(CACHE_GLOBAL_DIR, "cache_global")
+    CACHE_GLOBAL_DIR = os.path.join(BASE_PROFILE, "cache_global")
 update_dirs()
