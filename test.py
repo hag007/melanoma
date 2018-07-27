@@ -8,7 +8,7 @@ import shutil
 # import numpy.linalg as la
 # import numpy as np
 # import constants
-# from utils.param_builder import build_gdc_params
+# from utils.param_builder.py import build_gdc_params
 
 with gzip.open("GDC-PANCAN.GDC_phenotype.tsv.gz", 'rb') as f_in:
     with open("GDC-PANCAN.GDC_phenotype.tsv", 'wb') as f_out:

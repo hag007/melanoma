@@ -1,10 +1,11 @@
 import json
 import os
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 PATH_TO_CONF = "env/config/conf.json"
-config_json = json.load(file(PATH_TO_CONF))
+config_json = json.load(file(os.path.join(dir_path, PATH_TO_CONF)))
 
-USE_CACHE = True
+USE_CACHE = False
 PHENOTYPE_FORMAT = "GDC"
 DATASET_TYPE = "GDC-TCGA"
 CANCER_TYPE = "SKCM"
@@ -13,6 +14,7 @@ BASE_DATASET= os.path.join(BASE_PROFILE, DATASET_TYPE, CANCER_TYPE)
 CACHE_DIR = os.path.join(BASE_DATASET, "cache")
 DICTIONARIES_DIR = os.path.join(BASE_PROFILE, "dictionaries")
 OUTPUT_DIR = os.path.join(BASE_DATASET, "output")
+OUTPUT_GLOBAL_DIR = os.path.join(BASE_PROFILE, "output")
 TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
 GO_DIR = os.path.join(BASE_PROFILE, "GO")
 CACHE_GLOBAL_DIR = os.path.join(BASE_PROFILE, "cache_global")
@@ -65,6 +67,7 @@ def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_
     global BASE_DATASET
     global GO_DIR
     global CACHE_GLOBAL_DIR
+    global OUTPUT_GLOBAL_DIR
     BASE_PROFILE=BASE_DIR
     DATASET_TYPE = DATASET_TYPE_u
     CANCER_TYPE = CANCER_TYPE_u
@@ -75,6 +78,7 @@ def update_dirs(BASE_DIR=config_json["BASE_PROFILE"], DATASET_DIR=None, DATASET_
     CACHE_DIR = os.path.join(BASE_DATASET, "cache")
     DICTIONARIES_DIR = os.path.join(BASE_PROFILE, "dictionaries")
     OUTPUT_DIR = os.path.join(BASE_DATASET, "output")
+    OUTPUT_GLOBAL_DIR = os.path.join(BASE_PROFILE, "output")
     TCGA_DATA_DIR = os.path.join(BASE_DATASET, "tcga_data")
     GO_DIR = os.path.join(BASE_PROFILE, "GO")
     LIST_DIR = os.path.join(BASE_PROFILE, "list")

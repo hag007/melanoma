@@ -71,7 +71,7 @@ def find_genes_correlations(tested_gene_list_file_names, total_gene_list_file_na
                 output.append([e2g_convertor([all_gene_expressions_1[i][0]])[0], prsn[0], prsn[1]])
 
     if len(output) == 0:
-        return ([], [1.0 for x in intersection_gene_file_names])
+        return ([], ["{}\t({} {} {} {})".format(1.0, 0, 0, 0, 0) for x in intersection_gene_file_names])
     output = np.array(output)
     fdr_results = fdrcorrection0(output[:,2].astype(np.float32), alpha=0.05, method='indep', is_sorted=False)
     output = np.c_[output, fdr_results[1]]
@@ -83,8 +83,10 @@ def find_genes_correlations(tested_gene_list_file_names, total_gene_list_file_na
         hg_score = calc_HG_test(total_gene_list_N=[x.split(".")[0] for x in total_gene_list], tests_gene_list_B=cur_set, total_gene_list_n=g2e_convertor(output[np.logical_and(output[:, 3].astype(np.float)  < 0.05, output[:, 1].astype(np.float)  < 0)  , 0]))
         print hg_score
         hg_scores.append(hg_score)
-
-    # print_to_excel(header_columns, output, intersection_gene_sets, intersection_gene_file_names, "_".join([x.split(".")[0] for x in tested_gene_list_file_names]))
+    file_names = ""
+    if  tested_gene_list_file_names[0] is str:
+        file_names = "_".join([x.split(".")[0] for x in tested_gene_list_file_names])
+    print_to_excel(header_columns, output, intersection_gene_sets, intersection_gene_file_names, file_names)
     return (output, hg_scores)
 def print_to_excel(header_columns, data, intersection_gene_sets, intersection_gene_file_names, excel_name):
     wb = Workbook()#ffff00

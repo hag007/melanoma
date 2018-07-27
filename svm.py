@@ -62,10 +62,10 @@ def randonize_patients_old(data, labels):
 
 
 def divide_train_and_test_groups(data, labels):
-    data_train = data[:(3 * len(data)) / 4]
-    data_test = data[(3 * len(data)) / 4:]
-    labels_train = labels[:(3 * len(data)) / 4]
-    labels_test = labels[(3 * len(data)) / 4:]
+    data_train = data[:-1] # data[:(3 * len(data)) / 4]
+    data_test = data[-1:] # data[(3 * len(data)) / 4:]
+    labels_train = labels[:-1] # labels[:(3 * len(data)) / 4]
+    labels_test = labels[-1:] # labels[(3 * len(data)) / 4:]
     return data_train, data_test, labels_train, labels_test
 
 def svm_rbf_default(tuned_parameters):
@@ -114,7 +114,7 @@ def apply_svm(clf_method, data_train, labels_train, data_test, labels_test, rank
     precision, recall, _ = precision_recall_curve(labels_test, probabilities)
     average_precision = average_precision_score(labels_test, probabilities)
     fpr, tpr, _ = roc_curve(labels_test, probabilities)
-    auc = roc_auc_score(labels_test, probabilities)
+    auc = int(labels_test[0] == predicted_results[0])# roc_auc_score(labels_test, probabilities)
 
 
     # prediction = clf_method.predict(data_test)

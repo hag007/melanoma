@@ -56,7 +56,7 @@ def plot_heatmap(gene_expression_top_var, gene_expression_top_var_headers_column
         abs_bottom = 0.1
     if len(gene_expression_top_var_headers_rows) < 80:
         abs_left = 0.2
-        main_width = 0.7
+        main_width = 0.6
 
     ax1 = fig.add_axes([abs_left, abs_bottom, main_width, abs_height])
     axes.append(ax1)

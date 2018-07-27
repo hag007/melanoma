@@ -49,11 +49,9 @@ def plot_pca(dataset, labels_assignment, meta_groups, tested_gene_list_file_name
     plt.savefig(os.path.join(constants.BASE_PROFILE, "output", "PCA_by_average_{}_{}_{}.png").format(constants.CANCER_TYPE,tested_gene_list_file_name.split(".")[0],time.time()))
 
 
-def plot_pca_by_samples(dataset, labels_assignment, meta_groups, tested_gene_list_file_name=None):
+def plot_pca_by_samples(dataset, labels_assignment, meta_groups, tested_gene_list_file_name=None, n_components=3):
     actual_labels = list(range(1,len(meta_groups[0])+1))
 
-    labels = [(cur["_name"], cur["_label"]) for i, cur in enumerate(meta_groups[0])]
-    labels = [("unknown", 0)]+labels
     X=[]
     y=[]
     for cur in actual_labels:
@@ -62,11 +60,15 @@ def plot_pca_by_samples(dataset, labels_assignment, meta_groups, tested_gene_lis
             y.append(cur)
     X = np.array(X)
     y = np.array(y)
-    pca = PCA(n_components=3)
+    pca = PCA(n_components=n_components)
     pca.fit_transform(X[:len(X)-1].astype(np.float64))
 
     fig = plt.figure(1, figsize=(20, 20))
     plt.clf()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=y, cmap='jet')
-    plt.savefig(os.path.join(constants.BASE_PROFILE, "output", "PCA_by_samples_{}_{}_{}.png").format(constants.CANCER_TYPE,tested_gene_list_file_name.split(".")[0], time.time()))
+    if n_components==3:
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=y, cmap='jet')
+    if n_components==2:
+        ax = fig.add_subplot(111)
+        ax.scatter(X[:, 0], X[:, 1], c=y, cmap='jet')
+    plt.savefig(os.path.join(constants.BASE_PROFILE, "output", "PCA_by_samples_{}_{}_{}_{}.png").format(constants.CANCER_TYPE,tested_gene_list_file_name.split(".")[0], n_components, time.time()))

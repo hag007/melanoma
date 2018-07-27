@@ -11,7 +11,7 @@ logger = logging.getLogger("log")
 logger.addHandler(sh)
 import constants
 from infra import *
-
+MIN_FC_VAL = 1
 ############################ (2) significance expression and proportion differntiations #############################
 
 
@@ -128,6 +128,11 @@ def deg(tested_gene_file_name, total_gene_file_name, gene_expression_file_name, 
     gene_symbols = []
     for  i in range(1,len(group_0_expression)):
         mean_differences = np.average([float(c) for c in group_0_expression[i][1:]]) - np.average([float(c) for c in group_1_expression[i][1:]])
+
+        mean_foldchange = max(np.average([float(c) for c in group_0_expression[i][1:]]),1)/ max(np.average(
+            [float(c) for c in group_1_expression[i][1:]]),1)
+
+
         cur_pval = scipy.stats.ttest_ind([float(c) for c in group_0_expression[i][1:]], [float(c) for c in group_1_expression[i][1: ]])[1]
         direction = None
         if not math.isnan(cur_pval):
@@ -135,17 +140,17 @@ def deg(tested_gene_file_name, total_gene_file_name, gene_expression_file_name, 
                 direction = "downregulated"
             if mean_differences < 0:
                 direction = "upregulated"
-            pvals.append((group_0_expression[i][0], direction, cur_pval))
+            pvals.append((group_0_expression[i][0], direction, mean_differences, cur_pval, mean_foldchange))
 
-    pvals.sort(key=lambda x: x[2], reverse=False)
-    fdr_results = fdrcorrection0([x[2] for x in pvals], alpha=0.05, method='indep', is_sorted=True)
-    pvals = [(cur_pval[0],cur_pval[1],cur_pval[2],fdr_results[1][i]) for i, cur_pval in enumerate(pvals)]
+    pvals.sort(key=lambda x: (x[1], x[3]), reverse=False)
+    fdr_results = fdrcorrection0([x[3] for x in pvals], alpha=0.05, method='indep', is_sorted=False)
+    pvals = [(cur_pval[0],cur_pval[1],cur_pval[2],cur_pval[3], fdr_results[1][i], cur_pval[4]) for i, cur_pval in enumerate(pvals)]
     true_counter = len([cur for cur in fdr_results[0] if cur == True])
     print "true hypothesis: {}/{}".format(true_counter, np.size(fdr_results[0]))
     # sort gene_id-pval pairs by pval
     with file(os.path.join(constants.OUTPUT_DIR, "deg_{}_{}_{}.txt".format(constants.CANCER_TYPE, groups_name, time.time())), "w+") as f:
         output = ""
         for cur_pval in pvals:
-            output+="{}\t{}\t{}\t{}\r\n".format(*cur_pval)
+            output+="{}\t{}\t{}\t{}\t{}\t{}\n".format(*cur_pval)
         f.write(output)
         print "pval saved to file"

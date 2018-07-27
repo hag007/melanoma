@@ -264,13 +264,13 @@ def load_integrated_mutation_data(mutation_file_name,
 
 
     cache_path = os.path.join(constants.CACHE_DIR, "datasets",
-                              "datasets_{}".format(mutation_file_name.split(".")[0]))
+                              "datasets_{}".format(mutation_file_name[:mutation_file_name.rindex(".")]))
 
     if constants.USE_CACHE and os.path.exists(cache_path):
         print "loading datasets from cache"
-        tested_gene_expression_headers_rows =  np.load(os.path.join(cache_path,"header_rows.npy"))
-        tested_gene_expression_headers_columns =  np.load(os.path.join(cache_path,"header_columns.npy"))
-        tested_gene_expression =  np.load(os.path.join(cache_path,"data.npy"))
+        mutations_headers_rows =  np.load(os.path.join(cache_path,"header_rows.npy"))
+        mutations_headers_columns =  np.load(os.path.join(cache_path,"header_columns.npy"))
+        mutation_dataset =  np.load(os.path.join(cache_path,"data.npy"))
     else:
         print "loading datasets from files"
         mutation_dataset = np.array(load_mutation_data(mutation_file_name))
@@ -282,9 +282,9 @@ def load_integrated_mutation_data(mutation_file_name,
         if not os.path.exists(cache_path):
             os.makedirs(cache_path)
         print "saving data to cahce"
-        np.save(os.path.join(cache_path,"header_rows.npy"), tested_gene_expression_headers_rows)
-        np.save(os.path.join(cache_path,"header_columns.npy"), tested_gene_expression_headers_columns)
-        np.save(os.path.join(cache_path,"data.npy"), tested_gene_expression)
+        np.save(os.path.join(cache_path,"header_rows.npy"), mutations_headers_rows)
+        np.save(os.path.join(cache_path,"header_columns.npy"), mutations_headers_columns)
+        np.save(os.path.join(cache_path,"data.npy"), mutation_dataset)
 
     survival_dataset = np.array(load_survival_data(survival_file_name, survival_list_path=None))
     phenotype_dataset = np.array(load_phenotype_data(phenotype_file_name, phenotype_list_path=None))
@@ -300,7 +300,7 @@ def load_integrated_mutation_data(mutation_file_name,
     else:
         filtered_patients = np.append(mutations_headers_columns, survival_dataset[1:, 0])
 
-    mutation_dataset, mutations_headers_columns = filter_patients_dataset_by_patients(filtered_patients, mutations_headers_columns, mutation_dataset)
+    mutation_dataset, mutations_headers_rows = filter_patients_dataset_by_patients(filtered_patients, mutations_headers_rows, mutation_dataset)
     if np.shape(mutation_dataset)[0] == 1:
         print "no expressions were found after filtering by labels {}. skipping...".format(filter_expression)
         return None
@@ -334,7 +334,7 @@ def load_integrated_ge_data(tested_gene_list_file_name, total_gene_list_file_nam
 
     cache_path = os.path.join(constants.CACHE_DIR, "datasets",
                               "datasets_{}_{}".format(gene_expression_file_name.split(".")[0],
-                                                          tested_gene_list_file_name.split(".")[0]))
+                                                      tested_gene_list_file_name[:tested_gene_list_file_name.rindex(".")]))
 
     tested_gene_expression_headers_rows = None
     tested_gene_expression_headers_columns = None
@@ -353,13 +353,12 @@ def load_integrated_ge_data(tested_gene_list_file_name, total_gene_list_file_nam
         tested_gene_expression_headers_rows, tested_gene_expression_headers_columns, tested_gene_expression = separate_headers(
             tested_gene_expression)
 
-    if constants.USE_CACHE:
-        if not os.path.exists(cache_path):
-            os.makedirs(cache_path)
-        print "saving data to cahce"
-        np.save(os.path.join(cache_path,"header_rows.npy"), tested_gene_expression_headers_rows)
-        np.save(os.path.join(cache_path,"header_columns.npy"), tested_gene_expression_headers_columns)
-        np.save(os.path.join(cache_path,"data.npy"), tested_gene_expression)
+    if not os.path.exists(cache_path):
+        os.makedirs(cache_path)
+    print "saving data to cahce"
+    np.save(os.path.join(cache_path,"header_rows.npy"), tested_gene_expression_headers_rows)
+    np.save(os.path.join(cache_path,"header_columns.npy"), tested_gene_expression_headers_columns)
+    np.save(os.path.join(cache_path,"data.npy"), tested_gene_expression)
 
     print "loading data survival data"
     survival_dataset = np.array(load_survival_data(survival_file_name, survival_list_path=None))
