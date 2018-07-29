@@ -23,6 +23,10 @@ from goatools.base import download_ncbi_associations
 import constants
 from utils.ensembl2entrez import get_entrez2ensembl_dictionary
 import wget, os
+from utils.ensg_dictionary import get_ensg_dict
+from utils.ensp_dictionary import get_ensp_dict
+from utils.string_ppi_dictionary import get_string_ppi_dict
+import infra
 
 class WrHierGO(object):
     """Write hierarchy object."""
@@ -341,31 +345,77 @@ def fetch_go_hierarcy():
 
     return (go2geneids, geneids2go)
 
+def fetch_string_ppi_edges():
+    go_edges = {}
+    if constants.USE_CACHE:
+        if os.path.isfile("GO_edges_ppi.txt"):
+            GO_edges_ppi_grid = infra.load_phenotype_data("GO_edges_ppi.txt",phenotype_list_path=constants.DICTIONARIES_DIR)
+            for cur in GO_edges_ppi_grid:
+                go_edges[cur[0]] = int(cur[1])
+            return go_edges
+
+    print "fetching ensg"
+    ensg_dict = get_ensg_dict()
+    print "fetching ensp"
+    ensp_dict = get_ensp_dict()
+    print "fetching string ppi"
+    string_ppi_dict = get_string_ppi_dict()
+    go_edges = {}
+    count = 0
+    for cur_edge, cur_score in string_ppi_dict.iteritems():
+        count +=1
+        print count
+        vertices = cur_edge.split("=")
+        if not ensp_dict.has_key(vertices[0]) or not ensp_dict.has_key(vertices[1]): continue
+
+        go_src = ensp_dict[vertices[0]]["GO Terms"]
+        go_dst = ensp_dict[vertices[1]]["GO Terms"]
+
+        for cur_src in go_src:
+            for cur_dst in go_dst:
+                edge = "{}={}".format(cur_src,cur_dst)
+                edge_alt = "{}={}".format(cur_dst, cur_src)
+                if go_edges.has_key(edge):
+                    go_edges[edge] += int(cur_score)
+                elif go_edges.has_key(edge_alt):
+                    go_edges[edge_alt] += int(cur_score)
+                else:
+                    go_edges[edge] = int(cur_score)
+    with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi.txt"), "w+") as f:
+        for k,v in go_edges.iteritems():
+            f.write("{}\t{}\n".format(k,v))
+
+    return go_edges
+
+
+
 #################################################################
 # Driver
 #################################################################
 def build_hierarcy():
+    print "fetching ppi"
+    go_edges = fetch_string_ppi_edges()
 
     go2geneids, geneids2go = fetch_go_hierarcy()
 
-    """Run numerous tests for various reports."""
-    dag_fin = os.path.join(constants.GO_DIR, constants.GO_FILE_NAME)
-    tic = timeit.default_timer()
-    godag = GODag(dag_fin, optional_attrs=['relationship'])
-    gosubdag = GoSubDag(godag.keys(), godag)
-    toc = timeit.default_timer()
-    out = file(os.path.join(constants.BASE_PROFILE, "output", "go_hierarcy.txt"), "w+") # sys.stdout
-    dict_result = {}
-    for cur_term in ['GO:0005575']:
-        vertices, edges = extract_hier_all(gosubdag, out, cur_term ,go2geneids)
-        # write_hier_norep(gosubdag, out)
-        # write_hier_lim(gosubdag, out)
-        # write_hier_mrk(gosubdag, out)
-        msg = "Elapsed HMS: {}\n\n".format(str(datetime.timedelta(seconds=(toc-tic))))
-        sys.stdout.write(msg)
-        dict_result[cur_term] = {"vertices" : vertices, "edges": edges}
-
-    return dict_result, go2geneids, geneids2go, get_entrez2ensembl_dictionary()
+    # """Run numerous tests for various reports."""
+    # dag_fin = os.path.join(constants.GO_DIR, constants.GO_FILE_NAME)
+    # tic = timeit.default_timer()
+    # godag = GODag(dag_fin, optional_attrs=['relationship'])
+    # gosubdag = GoSubDag(godag.keys(), godag)
+    # toc = timeit.default_timer()
+    # out = file(os.path.join(constants.BASE_PROFILE, "output", "go_hierarcy.txt"), "w+") # sys.stdout
+    # dict_result = {}
+    # for cur_term in ['GO:0005575']:
+    #     vertices, edges = extract_hier_all(gosubdag, out, cur_term ,go2geneids)
+    #     # write_hier_norep(gosubdag, out)
+    #     # write_hier_lim(gosubdag, out)
+    #     # write_hier_mrk(gosubdag, out)
+    #     msg = "Elapsed HMS: {}\n\n".format(str(datetime.timedelta(seconds=(toc-tic))))
+    #     sys.stdout.write(msg)
+    #     dict_result[cur_term] = {"vertices" : vertices, "edges": edges}
+    #
+    # return dict_result, go2geneids, geneids2go, get_entrez2ensembl_dictionary()
 
 
 

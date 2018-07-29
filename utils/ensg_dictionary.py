@@ -13,11 +13,12 @@ def load_dict():
 
 	for i, cur_entry in enumerate(u_d_content):
 		if ensg_dict.has_key(cur_entry[0]):
-			ensg_dict[cur_entry[1]]["ENSP"].add(cur_entry[0])
-			ensg_dict[cur_entry[2]]["Uniport Entry"].add(cur_entry[1])
-			ensg_dict[cur_entry[3]]["GO Terms"].update(cur_entry[3].split("; "))
+			ensg_dict[cur_entry[0]]["ENSP"].add(cur_entry[1])
+			ensg_dict[cur_entry[0]]["Uniport Entry"].add(cur_entry[2])
+			ensg_dict[cur_entry[0]]["GO Terms"].update(cur_entry[3].split("; "))
 		else:
 			ensg_dict[cur_entry[0]] = {"ENSP" : set([cur_entry[1]]), "Uniport Entry" : set([cur_entry[2]]), "GO Terms" : set(cur_entry[3].split("; "))}
+	return ensg_dict
 
 def get_ensg_dict():
 	ensg_dict = load_dict()
