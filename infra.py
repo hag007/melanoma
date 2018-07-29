@@ -85,15 +85,15 @@ def load_gene_expression_profile_by_patients(gene_list_file_name, gene_expressio
 def load_phenotype_data(phenotype_file_name, phenotype_list_path=None, source="GDC-TCGA",dataset="melanoma"):
     if not phenotype_list_path:
         phenotype_list_path = os.path.join(constants.TCGA_DATA_DIR,phenotype_file_name)
-    f = open(phenotype_list_path, 'r')
-    phenotype_profile = [l.strip().split('\t') for l in f]
+    f = open(os.path.join(phenotype_list_path,phenotype_file_name), 'r')
+    phenotype_profile = [re.split("[\t]", l.rstrip('\n')) for l in f]
     f.close()
     return phenotype_profile
 
 def load_survival_data(survival_file_name, survival_list_path=None, source="GDC-TCGA",dataset="melanoma"):
     if not survival_list_path:
         survival_list_path = os.path.join(constants.TCGA_DATA_DIR,survival_file_name)
-    f = open(survival_list_path, 'r')
+    f = open(os.path.join(survival_list_path,survival_file_name), 'r')
     survival_profile = [l.strip().split('\t') for l in f]
     f.close()
     return survival_profile
