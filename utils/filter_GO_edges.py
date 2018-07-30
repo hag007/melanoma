@@ -26,6 +26,7 @@ import wget, os
 from utils.ensg_dictionary import get_ensg_dict
 from utils.ensp_dictionary import get_ensp_dict
 from utils.string_ppi_dictionary import get_string_ppi_dict
+from neo4j.v1 import GraphDatabase
 import infra
 
 class WrHierGO(object):
@@ -347,8 +348,8 @@ def fetch_go_hierarcy():
 
 def fetch_string_ppi_edges():
     go_edges = {}
-            if constants.USE_CACHE:
-        if os.path.isfile(os.path.join(constants.DICTIONARIES_DIR,"GO_edges_ppi_total.txt")):
+    if constants.USE_CACHE:
+        if os.path.isfile(os.path.join(constants.DICTIONARIES_DIR, "GO_edges_ppi_total.txt")):
             GO_edges_ppi_grid = infra.load_phenotype_data("GO_edges_ppi_total.txt",phenotype_list_path=constants.DICTIONARIES_DIR)
             for cur in GO_edges_ppi_grid:
                 go_edges[cur[0]] = int(cur[1])
@@ -381,7 +382,7 @@ def fetch_string_ppi_edges():
                     go_edges[edge_alt] += int(cur_score)
                 else:
                     go_edges[edge] = int(cur_score)
-    with file(os.path.join(constants.DICTIONARIES_DIR, "GO_edges_ppi_total.txt"), "w+") as f:
+    with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi_total.txt"), "w+") as f:
         for k,v in go_edges.iteritems():
             f.write("{}\t{}\n".format(k,v))
 
@@ -404,22 +405,25 @@ def build_hierarcy():
     godag = GODag(dag_fin, optional_attrs=['relationship'])
     gosubdag = GoSubDag(godag.keys(), godag)
     toc = timeit.default_timer()
-    out = file(os.path.join(constants.BASE_PROFILE, "output", "go_hierarcy.txt"), "w+") # sys.stdout
+    out = file(os.path.join(constants.BASE_PROFILE, "output", "go_hierarcy.txt"), "w+")  # sys.stdout
     dict_result = {}
     for cur_term in ['GO:0005575']:
-        vertices, edges = extract_hier_all(gosubdag, out, cur_term ,go2geneids)
-        # write_hier_norep(gosubdag, out)
-        # write_hier_lim(gosubdag, out)
-        # write_hier_mrk(gosubdag, out)
-        msg = "Elapsed HMS: {}\n\n".format(str(datetime.timedelta(seconds=(toc-tic))))
-        sys.stdout.write(msg)
-        dict_result[cur_term] = {"vertices" : vertices, "edges": edges}
+        vertices, edges = extract_hier_all(gosubdag, out, cur_term, go2geneids)
+        dict_result[cur_term] = {"vertices": vertices, "edges": edges}
 
-    return dict_result, go2geneids, geneids2go, get_entrez2ensembl_dictionary()
-
+    go_edges_filtered = {}
+    for cur_edges, score in go_edges.iteritems():
+        vertices = cur_edges.split("=")
+        if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575']['vertices'].has_key(vertices[1]) and score > 1000:
+            go_edges_filtered[cur_edges] = score
 
 
-########################################### ######################
+
+
+
+
+
+#################################################################
 # main
 #################################################################
 if __name__ == '__main__':

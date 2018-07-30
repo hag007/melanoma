@@ -7,7 +7,7 @@ import constants
 string_ppi_dict = {}
 
 def load_dict():
-	u_d = np.array(load_phenotype_data("string_ppi.txt", phenotype_list_path=constants.DICTIONARIES_DIR))
+	u_d = np.array(load_phenotype_data("string_ppi_total.txt", phenotype_list_path=constants.DICTIONARIES_DIR))
 	u_d_content = u_d[1:]
 
 	for i, cur_entry in enumerate(u_d_content):
