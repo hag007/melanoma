@@ -12,7 +12,6 @@ import constants
 import os
 import timeit
 import numpy as np
-import pcst_fast
 import datetime
 from goatools.obo_parser import GODag
 from goatools.gosubdag.gosubdag import GoSubDag
@@ -30,6 +29,7 @@ from utils.ensp_dictionary import get_ensp_dict
 from utils.string_ppi_dictionary import get_string_ppi_dict
 from neo4j.v1 import GraphDatabase
 import infra
+import pcst_fast
 
 class WrHierGO(object):
 
@@ -109,6 +109,26 @@ class _WrHierPrt(object):
                     self.edges["{}={}".format(goid, child.id)] = {"weight" : 0}
                 self.ext_hier_rec(child.id, depth)
 
+
+    @staticmethod
+    def _str_dash(depth, single_or_double):
+        """Return a string containing dashes (optional) and GO ID."""
+        # '-' is default character indicating hierarchy level
+        # '=' is used to indicate a hierarchical path printed in detail previously.
+        letter = '-' if single_or_double else '='
+        return ''.join([letter]*depth)
+
+    def _str_dashgoid(self, ntgo, depth, single_or_double):
+        """Return a string containing dashes (optional) and GO ID."""
+        dashes = self._str_dash(depth, single_or_double) if self.indent else ""
+        return "{DASHES} {GO}{alt:1}".format(DASHES=dashes, GO=ntgo.GO, alt=ntgo.alt)
+
+    def _init_prtfmt(self):
+        """Initialize print format."""
+        prtfmt = self.gosubdag.prt_attr['fmt']
+        prtfmt = prtfmt.replace('{GO} # ', '')
+        prtfmt = prtfmt.replace('{D1:5} ', '')
+        return prtfmt
 
 def extract_hier_all(gosubdag, out, root_term, go2geneids):
     """write_hier.py: Prints the entire mini GO hierarchy, with counts of children."""
@@ -211,43 +231,58 @@ def build_hierarcy():
         tx.run(("CREATE (n1: GO{{term:\"{TERM1}\"}})".format(TERM1=nd)))
 
 
-        count=0
-        vertices_grid = []
-        vertices_prizes = []
-        for k, v in dict_result['GO:0005575']['vertices'].iteritems():
-            if dict_result['GO:0005575']['vertices'].has_key(k) \
-                            and dict_result['GO:0005575']['vertices'][k]['isleaf']:
-                vertices_grid.append(k)
-                vertices_prizes.append(1)
-                count+=1
-        print "total vartices: {}".format(count)
+    count=0
+    vertices_grid = []
+    vertices_grid_values = []
+    vertices_prizes = []
+    for k, v in dict_result['GO:0005575']['vertices'].iteritems():
+        if dict_result['GO:0005575']['vertices'].has_key(k) \
+                        and dict_result['GO:0005575']['vertices'][k]['isleaf']:
+            vertices_grid.append(k)
+            vertices_grid_values.append(v)
+            vertices_prizes.append(1/float(10000000)) #
+            count+=1
+    print "total vartices: {}".format(count)
 
 
-        count=0
-        edges_grid = []
-        edges_costs = []
-        for cur_edges, score in go_edges.iteritems():
+    count=0
+    edges_grid = []
+    edges_costs = []
+    for cur_edges, score in go_edges.iteritems():
 
-            vertices = cur_edges.split("=")
-            if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575'][
-                'vertices'].has_key(vertices[1]) and score > 100000 \
-                    and dict_result['GO:0005575']['vertices'][vertices[0]]['isleaf'] and \
-                    dict_result['GO:0005575']['vertices'][vertices[1]]['isleaf']:
-                edges_grid.append([vertices_grid.index(vertices[0]), vertices_grid.index(vertices[0])])
-                edges_costs.append(1/float(score))
-                count+=1
-        print "total edges: {}".format(count)
+        vertices = cur_edges.split("=")
+        if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575'][
+            'vertices'].has_key(vertices[1]) and score > 10000 \
+                and dict_result['GO:0005575']['vertices'][vertices[0]]['isleaf'] and \
+                dict_result['GO:0005575']['vertices'][vertices[1]]['isleaf']:
+            edges_grid.append([vertices_grid.index(vertices[0]), vertices_grid.index(vertices[1])])
+            cost = (len(go2geneids[vertices[0]])*len(go2geneids[vertices[1]]))
+            # print "{}, {}:".format(vertices[0], vertices[1])
+	    if cost != 0:
+		cost=1/float(score)
+	    else:
+                cost=10000
+            # print cost
+            edges_costs.append(cost)
+            count+=1
+    print "total edges: {}".format(count)
+    edges_costs = np.array(edges_costs)
+    print "edge precentiles: {}".format([np.percentile(edges_costs,x) for x in range(10)])
 
-        edges_grid=np.array(edges_grid).astype(np.float64)
-        vertices_prizes=np.array(vertices_prizes).astype(np.floa64)
-        edges_costs = np.array(edges_costs).astype(np.float64)
-        root = -1
-        num_clusters=1
-        pruning = None
-        verbosity_level = None
-        vertices, edges = pcst_fast(edges_grid, vertices_prizes, edges_costs, root, num_clusters, pruning, verbosity_level)
-
-
+    edges_grid=np.array(edges_grid).astype(np.int64)
+    vertices_prizes=np.array(vertices_prizes).astype(np.float64)
+    edges_costs = np.array(edges_costs).astype(np.float64)
+    root = -1
+    num_clusters=1
+    pruning = 'none'
+    verbosity_level = 0
+    vertices, edges = pcst_fast.pcst_fast(edges_grid, vertices_prizes, edges_costs, root, num_clusters, pruning, verbosity_level)
+    print "vertices"
+    print [vertices_grid[x] for x in vertices]
+    print [vertices_grid_values[x]["name"] for x in vertices]
+    print "edges"
+    print ["{}={}".format(vertices_grid[edges_grid[x][0]], vertices_grid[edges_grid[x][1]]) for x in edges]
+    print ["{} = {}".format(vertices_grid_values[int(edges_grid[x][0])]["name"], vertices_grid_values[int(edges_grid[x][1])]["name"]) for x in edges]
 
 if __name__ == '__main__':
     print build_hierarcy()
