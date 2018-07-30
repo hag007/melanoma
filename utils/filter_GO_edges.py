@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2016-2018, DV Klopfenstein, H Tang. All rights re
 __author__ = "DV Klopfenstein"
 
 import sys
+sys.path.insert(0, '../')
 import collections as cx
 from goatools.godag.consts import Consts
 from goatools.gosubdag.go_paths import GoPaths
@@ -143,7 +144,9 @@ class _WrHierPrt(object):
                                    "NS": ntgo.NS,
                                    "depth": [depth],
                                    "L" : ntgo.level,
-                                   "D" : ntgo.depth}
+                                   "D" : ntgo.depth,
+                                   "isleaf" : len(ntobj.children) == 0,
+                                   "obj": ntobj}
 
         self.gos_printed.add(goid)
         # Do not extract hierarchy below this turn if it has already been printed
@@ -333,8 +336,8 @@ def fetch_go_hierarcy():
     if not os.path.exists(os.path.join(constants.GO_DIR, constants.GO_FILE_NAME)):
         wget.download(constants.GO_OBO_URL, os.path.join(constants.GO_DIR, constants.GO_FILE_NAME))
 
-    print "Downloading gene-GO associations"
     association_file_location = os.path.join(constants.GO_DIR, constants.GO_ASSOCIATION_FILE_NAME)
+    print "Downloading gene-GO associations to {}".format(association_file_location)
     if not os.path.exists(association_file_location):
         wget.download(constants.GO_ASSOCIATION_GENE2GEO_URL,
                       os.path.join(constants.GO_DIR, constants.GO_ASSOCIATION_FILE_NAME))
@@ -348,11 +351,16 @@ def fetch_go_hierarcy():
 
 def fetch_string_ppi_edges():
     go_edges = {}
+    grid_len = 0
     if constants.USE_CACHE:
         if os.path.isfile(os.path.join(constants.DICTIONARIES_DIR, "GO_edges_ppi_total.txt")):
+            print "about to load ppi"
             GO_edges_ppi_grid = infra.load_phenotype_data("GO_edges_ppi_total.txt",phenotype_list_path=constants.DICTIONARIES_DIR)
+	    grid_len = len(GO_edges_ppi_grid)
+            print "done load ppi ({} lines). about to load to dict".format(grid_len)
             for cur in GO_edges_ppi_grid:
                 go_edges[cur[0]] = int(cur[1])
+            print "done load to dict"
             return go_edges
 
     print "fetching ensg"
@@ -383,7 +391,10 @@ def fetch_string_ppi_edges():
                 else:
                     go_edges[edge] = int(cur_score)
     with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi_total.txt"), "w+") as f:
+	count=0
         for k,v in go_edges.iteritems():
+	    count +=1
+	    print "{}/{}".format(count,grid_len)
             f.write("{}\t{}\n".format(k,v))
 
     return go_edges
@@ -412,10 +423,18 @@ def build_hierarcy():
         dict_result[cur_term] = {"vertices": vertices, "edges": edges}
 
     go_edges_filtered = {}
+    lines = []
     for cur_edges, score in go_edges.iteritems():
         vertices = cur_edges.split("=")
-        if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575']['vertices'].has_key(vertices[1]) and score > 1000:
+        if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575']['vertices'].has_key(vertices[1]) and score > 1000 \
+                and dict_result['GO:0005575']['vertices'][vertices[0]]['isleaf'] and dict_result['GO:0005575']['vertices'][vertices[1]]['isleaf']:
             go_edges_filtered[cur_edges] = score
+            lines.append("{}\t{}\n".format(cur_edges, score))
+
+    print "about to write filtered ppi go edges to file ({} lines)".format(len(lines))
+    with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi_filtered.txt"), "w+") as f:
+	f.writelines(lines)
+
 
 
 

@@ -143,7 +143,9 @@ class _WrHierPrt(object):
                                    "NS": ntgo.NS,
                                    "depth": [depth],
                                    "L" : ntgo.level,
-                                   "D" : ntgo.depth}
+                                   "D" : ntgo.depth,
+                                   "isleaf" : len(ntobj.children) == 0,
+                                   "obj": ntobj}
 
         self.gos_printed.add(goid)
         # Do not extract hierarchy below this turn if it has already been printed
@@ -349,8 +351,8 @@ def fetch_go_hierarcy():
 def fetch_string_ppi_edges():
     go_edges = {}
     if constants.USE_CACHE:
-        if os.path.isfile(os.path.join(constants.DICTIONARIES_DIR, "GO_edges_ppi_total.txt")):
-            GO_edges_ppi_grid = infra.load_phenotype_data("GO_edges_ppi_total.txt",phenotype_list_path=constants.DICTIONARIES_DIR)
+        if os.path.isfile(os.path.join(constants.DICTIONARIES_DIR, "GO_edges_ppi_filtered_cc_leafs.txt")):
+            GO_edges_ppi_grid = infra.load_phenotype_data("GO_edges_ppi_filtered_cc_leafs.txt",phenotype_list_path=constants.DICTIONARIES_DIR)
             for cur in GO_edges_ppi_grid:
                 go_edges[cur[0]] = int(cur[1])
             return go_edges
@@ -382,7 +384,7 @@ def fetch_string_ppi_edges():
                     go_edges[edge_alt] += int(cur_score)
                 else:
                     go_edges[edge] = int(cur_score)
-    with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi_total.txt"), "w+") as f:
+    with file(os.path.join(constants.OUTPUT_GLOBAL_DIR, "GO_edges_ppi_filtered_cc_leafs.txt"), "w+") as f:
         for k,v in go_edges.iteritems():
             f.write("{}\t{}\n".format(k,v))
 
@@ -432,16 +434,27 @@ def build_hierarcy():
                              "RETURN friend.name ORDER BY friend.name", name=name):
             print(record["friend.name"])
 
-    with driver.session() as session:
-        # tx = session.begin_transaction()
-        # for k, v in dict_result['GO:0005575']['vertices'].iteritems():
-        #     add_node(tx, k)
-        #     tx.commit()
+    # with driver.session() as session:
+    #     count=0
+    #     for k, v in dict_result['GO:0005575']['vertices'].iteritems():
+    #         if dict_result['GO:0005575']['vertices'].has_key(k) \
+    #                         and dict_result['GO:0005575']['vertices'][k]['isleaf']:
+    #                     session.write_transaction(add_node,k)
+    #                     count+=1
+    #     print "total vartices: {}".foramt(count)
 
+    with driver.session() as session:
+        count=0
         for cur_edges, score in go_edges.iteritems():
+
             vertices = cur_edges.split("=")
-            if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575']['vertices'].has_key(vertices[1]) and score > 1000:
+            if dict_result['GO:0005575']['vertices'].has_key(vertices[0]) and dict_result['GO:0005575'][
+                'vertices'].has_key(vertices[1]) and score > 100000 \
+                    and dict_result['GO:0005575']['vertices'][vertices[0]]['isleaf'] and \
+                    dict_result['GO:0005575']['vertices'][vertices[1]]['isleaf']:
+                count+=1
                 session.write_transaction(add_edge, vertices[0], vertices[1], score)
+        print "total edges: {}".format(count)
 
 
 
