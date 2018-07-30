@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2016-2018, DV Klopfenstein, H Tang. All rights re
 __author__ = "DV Klopfenstein"
 
 import sys
+sys.path.insert(0, '../')
 import collections as cx
 from goatools.godag.consts import Consts
 from goatools.gosubdag.go_paths import GoPaths
@@ -27,9 +28,10 @@ import wget, os
 from utils.ensg_dictionary import get_ensg_dict
 from utils.ensp_dictionary import get_ensp_dict
 from utils.string_ppi_dictionary import get_string_ppi_dict
-from neo4j.v1 import GraphDatabase
 import infra
 import pcst_fast
+from utils.go_dictionary import get_go_dict
+
 
 class WrHierGO(object):
 
@@ -204,6 +206,9 @@ def fetch_string_ppi_edges():
 #################################################################
 def build_hierarcy():
     print "fetching ppi"
+
+    go_dictionary = get_go_dict()
+
     go_edges = fetch_string_ppi_edges()
 
     go2geneids, geneids2go = fetch_go_hierarcy()
@@ -222,15 +227,6 @@ def build_hierarcy():
 
 
 
-    def add_edge(tx, src, dst, score):
-        tx.run(("MERGE (n1: GO{{term:\"{TERM1}\"}})"+ \
-                "MERGE (n2: GO{{term:\"{TERM2}\"}})"+ \
-                "MERGE (n1)-[r:SCR {{ score: {SCORE} }}]->(n2)").format(TERM1=src, TERM2=dst, SCORE=score))
-
-    def add_node(tx, nd):
-        tx.run(("CREATE (n1: GO{{term:\"{TERM1}\"}})".format(TERM1=nd)))
-
-
     count=0
     vertices_grid = []
     vertices_grid_values = []
@@ -240,9 +236,10 @@ def build_hierarcy():
                         and dict_result['GO:0005575']['vertices'][k]['isleaf']:
             vertices_grid.append(k)
             vertices_grid_values.append(v)
-            vertices_prizes.append(1/float(10000000)) #
             count+=1
     print "total vartices: {}".format(count)
+
+
 
 
     count=0
@@ -256,7 +253,7 @@ def build_hierarcy():
                 and dict_result['GO:0005575']['vertices'][vertices[0]]['isleaf'] and \
                 dict_result['GO:0005575']['vertices'][vertices[1]]['isleaf']:
             edges_grid.append([vertices_grid.index(vertices[0]), vertices_grid.index(vertices[1])])
-            cost = (len(go2geneids[vertices[0]])*len(go2geneids[vertices[1]]))
+            cost = (len(go_dictionary[vertices[0]]["ENSP"])*len(go_dictionary[vertices[1]]["ENSP"]))
             # print "{}, {}:".format(vertices[0], vertices[1])
 	    if cost != 0:
 		cost=1/float(score)
@@ -267,7 +264,12 @@ def build_hierarcy():
             count+=1
     print "total edges: {}".format(count)
     edges_costs = np.array(edges_costs)
-    print "edge precentiles: {}".format([np.percentile(edges_costs,x) for x in range(10)])
+    percentiles = [np.percentile(edges_costs,x) for x in range(10)]
+    print "edge precentiles: {}".format(percentiles)
+
+    for cur_v in vertices_grid:
+        vertices_prizes.append(percentiles[5])
+
 
     edges_grid=np.array(edges_grid).astype(np.int64)
     vertices_prizes=np.array(vertices_prizes).astype(np.float64)
